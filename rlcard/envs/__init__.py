@@ -49,6 +49,6 @@ register(
 )
 
 register(
-    env_id='five_hundred',
+    env_id='five-hundred',
     entry_point='rlcard.envs.five_hundred:FiveHundredEnv'
 )

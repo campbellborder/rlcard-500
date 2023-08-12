@@ -29,13 +29,15 @@ class FiveHundredRound:
     def round_phase(self):
         if self.is_over():
             result = 'round over'
+        elif self.is_discarding_over():
+            result = 'discard kitty'
         elif self.is_bidding_over():
             result = 'play card'
         else:
             result = 'make bid'
         return result
 
-    def __init__(self, num_players: int, board_id: int, np_random):
+    def __init__(self, board_id: int, np_random):
         ''' Initialize the round class
 
             The round class maintains the following instances:
@@ -53,48 +55,53 @@ class FiveHundredRound:
         '''
         tray = Tray(board_id=board_id)
         dealer_id = tray.dealer_id
+        self.num_players = 4
         self.tray = tray
         self.np_random = np_random
+
         self.dealer: FiveHundredDealer = FiveHundredDealer(self.np_random)
-        self.players: List[FiveHundredPlayer] = []
-        for player_id in range(num_players):
-            self.players.append(FiveHundredPlayer(player_id=player_id, np_random=self.np_random))
-        self.current_player_id: int = dealer_id
         self.kitty: [FiveHundredCard] = []
+
+        self.players: List[FiveHundredPlayer] = []
+        for player_id in range(self.num_players):
+            self.players.append(FiveHundredPlayer(player_id=player_id, np_random=self.np_random))
+        self.players_passed = [0] * self.num_players
         
-        # TODO: why?
-        self.play_card_count: int = 0
         self.contract_bid_move: MakeBidMove or None = None
-        self.won_trick_counts = [0, 0]  # count of won tricks by side
+        self.play_card_count: int = 0
+        self.won_trick_counts = [0] * 2 # count of tricks won by each side
         self.move_sheet: List[FiveHundredMove] = []
         self.move_sheet.append(DealHandMove(dealer=self.players[dealer_id], shuffled_deck=self.dealer.shuffled_deck))
+        self.current_player_id: int = (dealer_id + 1) % 4
 
         # Deal cards
         for num_cards in [3, 4, 3]:
-            for player_id in range(4):
+            for player_id in range(self.num_players):
                 player = self.players[player_id]
-                self.dealer.deal_to_player(player=player, num=num_cards)
-            self.dealer.deal_to_kitty(round=self, num=1)
+                self.dealer.deal_to_hand(hand=player.hand, num=num_cards)
+            self.dealer.deal_to_hand(hand=self.kitty, num=1)
 
     def is_bidding_over(self) -> bool:
         ''' Return whether the current bidding is over
         '''
-        is_bidding_over = True
-        if len(self.move_sheet) < 5:
-            is_bidding_over = False
-        else:
-            last_make_pass_moves: List[MakePassMove] = []
+        is_bidding_over = False
+        if len(self.move_sheet) > 3: # If they have been at least 4 bids
+            num_pass_moves: int  = 0
             for move in reversed(self.move_sheet):
                 if isinstance(move, MakePassMove):
-                    last_make_pass_moves.append(move)
-                    if len(last_make_pass_moves) == 3:
-                        break
-                elif isinstance(move, CallMove):
-                    is_bidding_over = False
-                    break
-                else:
-                    break
+                    num_pass_moves += 1
+                    if num_pass_moves == 3: 
+                        is_bidding_over = True
         return is_bidding_over
+    
+    def is_discarding_over(self) -> bool:
+        ''' Return whether the declarer has discarded the kitty
+        '''
+        is_discarding_over = False
+        if self.is_bidding_over():
+            if len(self.get_declarer().hand) <= 10:
+                is_discarding_over = True
+        return is_discarding_over
 
     def is_over(self) -> bool:
         ''' Return whether the current game is over
@@ -110,53 +117,75 @@ class FiveHundredRound:
         return is_over
 
     def get_current_player(self) -> FiveHundredPlayer or None:
+        ''' Return the current player
+        '''
         current_player_id = self.current_player_id
-        return None if current_player_id is None else self.players[current_player_id]
+        return self.players[current_player_id] if current_player_id is not None else None
 
     def get_trick_moves(self) -> List[PlayCardMove]:
+        ''' Return a list of the PlayCardMoves associated with the current trick
+        '''
         trick_moves: List[PlayCardMove] = []
         if self.is_bidding_over():
             if self.play_card_count > 0:
                 trick_pile_count = self.play_card_count % 4
                 if trick_pile_count == 0:
                     trick_pile_count = 4  # wch: note this
-                for move in self.move_sheet[-trick_pile_count:]:
-                    if isinstance(move, PlayCardMove):
-                        trick_moves.append(move)
+                trick_moves = self.move_sheet[-trick_pile_count:]
+                # TODO: is this ^ better than this:
+                # for move in self.move_sheet[-trick_pile_count:]:
+                #     if isinstance(move, PlayCardMove):
+                #         trick_moves.append(move)
+                # TODO: do we need this anymore?
                 if len(trick_moves) != trick_pile_count:
                     raise Exception(f'get_trick_moves: count of trick_moves={[str(move.card) for move in trick_moves]} does not equal {trick_pile_count}')
         return trick_moves
 
     def get_trump_suit(self) -> str or None:
+        ''' Gets the suit of the winning bid
+        '''
         trump_suit = None
         if self.contract_bid_move:
             trump_suit = self.contract_bid_move.action.bid_suit
         return trump_suit
+    
+    def distribute_kitty(self):
+        ''' Distribute the kitty to the declarer
+        '''
+        self.get_declarer().hand += self.kitty
+        self.kitty = []
 
     def make_call(self, action: CallActionEvent):
         # when current_player takes CallActionEvent step, the move is recorded and executed
+        # TODO: If bidding is over, error
         current_player = self.players[self.current_player_id]
         if isinstance(action, PassAction):
             self.move_sheet.append(MakePassMove(current_player))
+            self.players_passed[self.current_player_id] = 1
         elif isinstance(action, BidAction):
-            self.doubling_cube = 1
             make_bid_move = MakeBidMove(current_player, action)
             self.contract_bid_move = make_bid_move
             self.move_sheet.append(make_bid_move)
-        if self.is_bidding_over():
-            if not self.is_over():
-                self.current_player_id = self.get_left_defender().player_id
-        else:
-            self.current_player_id = (self.current_player_id + 1) % 4
+        
+        if self.is_bidding_over(): # Distribute kitty to declarer
+            self.distribute_kitty()
+        self.next_player()
 
     def play_card(self, action: PlayCardAction):
         # when current_player takes PlayCardAction step, the move is recorded and executed
+        # TODO: if still bidding, error
         current_player = self.players[self.current_player_id]
         self.move_sheet.append(PlayCardMove(current_player, action))
         card = action.card
         current_player.remove_card_from_hand(card=card)
+
+        # Discarding kitty
+        if not self.is_discarding_over():
+            self.kitty.append(card)
+            return
+        
+        # Playing a card
         self.play_card_count += 1
-        # update current_player_id
         trick_moves = self.get_trick_moves()
         if len(trick_moves) == 4:
             trump_suit = self.get_trump_suit()
@@ -175,17 +204,26 @@ class FiveHundredRound:
             self.current_player_id = trick_winner.player_id
             self.won_trick_counts[trick_winner.player_id % 2] += 1
         else:
-            self.current_player_id = (self.current_player_id + 1) % 4
+            self.next_player()
+
+    def next_player(self):
+        
+        if not self.is_over():
+            if self.is_bidding_over():
+                # Next player in rotation
+                self.current_player_id = (self.current_player_id + 1) % 4
+            else:
+                # Next non-passed player
+                while True:
+                    self.current_player_id = (self.current_player_id + 1) % 4
+                    if not self.players_passed[self.current_player_id]: break
+
+        self.current_player_id = (self.current_player_id + 1) % 4
 
     def get_declarer(self) -> FiveHundredPlayer or None:
         declarer = None
         if self.contract_bid_move:
-            trump_suit = self.contract_bid_move.action.bid_suit
-            side = self.contract_bid_move.player.player_id % 2
-            for move in self.move_sheet:
-                if isinstance(move, MakeBidMove) and move.action.bid_suit == trump_suit and move.player.player_id % 2 == side:
-                    declarer = move.player
-                    break
+            declarer = self.contract_bid_move.player
         return declarer
 
     def get_dummy(self) -> FiveHundredPlayer or None:
@@ -225,8 +263,7 @@ class FiveHundredRound:
         state['current_player_id'] = self.current_player_id
         state['round_phase'] = self.round_phase
         state['last_call_move'] = last_call_move
-        state['doubling_cube'] = self.doubling_cube
-        state['contact'] = self.contract_bid_move if self.is_bidding_over() and self.contract_bid_move else None
+        state['contract'] = self.contract_bid_move if self.is_bidding_over() and self.contract_bid_move else None
         state['hands'] = [player.hand for player in self.players]
         state['trick_moves'] = trick_moves
         return state

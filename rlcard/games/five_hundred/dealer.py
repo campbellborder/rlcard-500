@@ -8,7 +8,6 @@ from typing import List
 
 from .player import FiveHundredPlayer
 from .utils.five_hundred_card import FiveHundredCard
-from .round import FiveHundredRound
 
 
 class FiveHundredDealer:
@@ -22,21 +21,11 @@ class FiveHundredDealer:
         self.np_random.shuffle(self.shuffled_deck)
         self.stock_pile: List[FiveHundredCard] = self.shuffled_deck.copy()
 
-    def deal_to_player(self, player: FiveHundredPlayer, num: int):
-        ''' Deal some cards from stock_pile to one player
-
+    def deal_to_hand(self, hand: [FiveHundredCard], num: int):
+        '''
         Args:
-            player (FiveHundredPlayer): The FiveHundredPlayer object
+            hand ([FiveHundredCard]): The list of cards to append to, be it a players hand or the kitty
             num (int): The number of cards to be dealt
         '''
         for _ in range(num):
-            player.hand.append(self.stock_pile.pop())
-
-    def deal_to_kitty(self, round: FiveHundredRound, num: int):
-        '''
-        Args:
-            round (FiveHundredRound): The FiveHundredRound object
-            num (int): The number of cards to be dealt
-        '''
-        for _ in range(num):
-            round.kitty.append(self.stock_pile.pop())
+            hand.append(self.stock_pile.pop())

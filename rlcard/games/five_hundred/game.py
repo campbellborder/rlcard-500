@@ -34,7 +34,6 @@ class FiveHundredGame:
         self.board_id = self.np_random.choice([0, 1, 2, 3])
         self.actions: List[ActionEvent] = []
         self.init_round()
-        self.round = FiveHundredRound(num_players=self.num_players, board_id=self.board_id, np_random=self.np_random)
         current_player_id = self.round.current_player_id
         state = self.get_state(player_id=current_player_id)
         return state, current_player_id
@@ -43,7 +42,7 @@ class FiveHundredGame:
         ''' Initialize a new round
         '''
         self.board_id = (self.board_id + 1) % 4
-        self.round = FiveHundredRound(num_players=self.num_players, board_id=self.board_id, np_random=self.np_random)
+        self.round = FiveHundredRound(board_id=self.board_id, np_random=self.np_random)
         
 
     def step(self, action: ActionEvent):
@@ -59,7 +58,8 @@ class FiveHundredGame:
 
         # If round is over, start a new round
         if self.round.is_over():
-            self.round = FiveHundredRound(num_players=self.num_players, board_id=board_id, np_random=self.np_random)
+            self.board_id = (self.board_id + 1) % 4
+            self.round = FiveHundredRound(board_id=self.board_id, np_random=self.np_random)
 
         # Get next player and state
         next_player_id = self.round.current_player_id
