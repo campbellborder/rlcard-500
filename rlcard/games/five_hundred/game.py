@@ -26,19 +26,25 @@ class FiveHundredGame:
         self.actions: [ActionEvent] = []  # must reset in init_game
         self.round: FiveHundredRound or None = None  # must reset in init_game
         self.num_players: int = 4
+        self.scores: (int, int) = (0, 0) # (N-S, E-W)
 
     def init_game(self):
         ''' Initialize all characters in the game and start round 1
         '''
-        board_id = self.np_random.choice([1, 2, 3, 4])
+        self.board_id = self.np_random.choice([0, 1, 2, 3])
         self.actions: List[ActionEvent] = []
-        self.round = FiveHundredRound(num_players=self.num_players, board_id=board_id, np_random=self.np_random)
-        for player_id in range(4):
-            player = self.round.players[player_id]
-            self.round.dealer.deal_cards(player=player, num=13)
+        self.init_round()
+        self.round = FiveHundredRound(num_players=self.num_players, board_id=self.board_id, np_random=self.np_random)
         current_player_id = self.round.current_player_id
         state = self.get_state(player_id=current_player_id)
         return state, current_player_id
+
+    def init_round(self):
+        ''' Initialize a new round
+        '''
+        self.board_id = (self.board_id + 1) % 4
+        self.round = FiveHundredRound(num_players=self.num_players, board_id=self.board_id, np_random=self.np_random)
+        
 
     def step(self, action: ActionEvent):
         ''' Perform game action and return next player number, and the state for next player
@@ -50,6 +56,12 @@ class FiveHundredGame:
         else:
             raise Exception(f'Unknown step action={action}')
         self.actions.append(action)
+
+        # If round is over, start a new round
+        if self.round.is_over():
+            self.round = FiveHundredRound(num_players=self.num_players, board_id=board_id, np_random=self.np_random)
+
+        # Get next player and state
         next_player_id = self.round.current_player_id
         next_state = self.get_state(player_id=next_player_id)
         return next_state, next_player_id
@@ -71,7 +83,7 @@ class FiveHundredGame:
         return self.round.current_player_id
 
     def is_over(self) -> bool:
-        ''' Return whether the current game is over
+        ''' Return whether the current round is over
         '''
         return self.round.is_over()
 

@@ -9,9 +9,10 @@ from typing import List
 from .dealer import FiveHundredDealer
 from .player import FiveHundredPlayer
 
-from .utils.action_event import CallActionEvent, PassAction, DblAction, RdblAction, BidAction, PlayCardAction
-from .utils.move import FiveHundredMove, DealHandMove, PlayCardMove, MakeBidMove, MakePassMove, MakeDblMove, MakeRdblMove, CallMove
+from .utils.action_event import CallActionEvent, PassAction, BidAction, PlayCardAction
+from .utils.move import FiveHundredMove, DealHandMove, PlayCardMove, MakeBidMove, MakePassMove, CallMove
 from .utils.tray import Tray
+from .utils.five_hundred_card import FiveHundredCard
 
 
 class FiveHundredRound:
@@ -21,17 +22,13 @@ class FiveHundredRound:
         return self.tray.dealer_id
 
     @property
-    def vul(self):
-        return self.tray.vul
-
-    @property
     def board_id(self) -> int:
         return self.tray.board_id
 
     @property
     def round_phase(self):
         if self.is_over():
-            result = 'game over'
+            result = 'round over'
         elif self.is_bidding_over():
             result = 'play card'
         else:
@@ -45,15 +42,9 @@ class FiveHundredRound:
                 1) dealer: the dealer of the round; dealer has trick_pile
                 2) players: the players in the round; each player has his own hand_pile
                 3) current_player_id: the id of the current player who has the move
-                4) doubling_cube: 2 if contract is doubled; 4 if contract is redoubled; else 1
+                4) kitty: the cards in the kitty
                 5) play_card_count: count of PlayCardMoves
-                5) move_sheet: history of the moves of the players (including the deal_hand_move)
-
-            The round class maintains a list of moves made by the players in self.move_sheet.
-            move_sheet is similar to a chess score sheet.
-            I didn't want to call it a score_sheet since it is not keeping score.
-            I could have called move_sheet just moves, but that might conflict with the name moves used elsewhere.
-            I settled on the longer name "move_sheet" to indicate that it is the official list of moves being made.
+                6) move_sheet: history of the moves of the players (including the deal_hand_move)
 
         Args:
             num_players: int
@@ -69,12 +60,21 @@ class FiveHundredRound:
         for player_id in range(num_players):
             self.players.append(FiveHundredPlayer(player_id=player_id, np_random=self.np_random))
         self.current_player_id: int = dealer_id
-        self.doubling_cube: int = 1
+        self.kitty: [FiveHundredCard] = []
+        
+        # TODO: why?
         self.play_card_count: int = 0
         self.contract_bid_move: MakeBidMove or None = None
         self.won_trick_counts = [0, 0]  # count of won tricks by side
         self.move_sheet: List[FiveHundredMove] = []
         self.move_sheet.append(DealHandMove(dealer=self.players[dealer_id], shuffled_deck=self.dealer.shuffled_deck))
+
+        # Deal cards
+        for num_cards in [3, 4, 3]:
+            for player_id in range(4):
+                player = self.players[player_id]
+                self.dealer.deal_to_player(player=player, num=num_cards)
+            self.dealer.deal_to_kitty(round=self, num=1)
 
     def is_bidding_over(self) -> bool:
         ''' Return whether the current bidding is over
@@ -143,12 +143,6 @@ class FiveHundredRound:
             make_bid_move = MakeBidMove(current_player, action)
             self.contract_bid_move = make_bid_move
             self.move_sheet.append(make_bid_move)
-        elif isinstance(action, DblAction):
-            self.doubling_cube = 2
-            self.move_sheet.append(MakeDblMove(current_player))
-        elif isinstance(action, RdblAction):
-            self.doubling_cube = 4
-            self.move_sheet.append(MakeRdblMove(current_player))
         if self.is_bidding_over():
             if not self.is_over():
                 self.current_player_id = self.get_left_defender().player_id

@@ -6,11 +6,16 @@
 
 from rlcard.games.base import Card
 
-
 class FiveHundredCard(Card):
 
-    suits = ['C', 'D', 'H', 'S']
-    ranks = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
+    suits = ['S', 'C', 'D', 'H', 'RJ']
+    ranks = ['4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
+
+    black_suits = ['S', 'C']
+    red_suits = ['D', 'H']
+    black_ranks = ['5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
+    red_ranks = ['4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
+    
 
     @staticmethod
     def card(card_id: int):
@@ -22,9 +27,15 @@ class FiveHundredCard(Card):
 
     def __init__(self, suit: str, rank: str):
         super().__init__(suit=suit, rank=rank)
-        suit_index = FiveHundredCard.suits.index(self.suit)
-        rank_index = FiveHundredCard.ranks.index(self.rank)
-        self.card_id = 13 * suit_index + rank_index
+        if self.suit == "RJ":
+            self.card_id = 42
+        else:
+            suit_index = FiveHundredCard.suits.index(self.suit)
+            rank_index = FiveHundredCard.ranks.index(self.rank)
+            if self.suit in self.black_suits:
+                self.card_id = 10 * suit_index + rank_index - 1
+            else:
+                self.card_id = 10 * suit_index + rank_index + suit_index % 2
 
     def __str__(self):
         return f'{self.rank}{self.suit}'
@@ -33,5 +44,7 @@ class FiveHundredCard(Card):
         return f'{self.rank}{self.suit}'
 
 
-# deck is always in order from 2C, ... KC, AC, 2D, ... KD, AD, 2H, ... KH, AH, 2S, ... KS, AS
-_deck = [FiveHundredCard(suit=suit, rank=rank) for suit in FiveHundredCard.suits for rank in FiveHundredCard.ranks]  # want this to be read-only
+# deck is always in order from 5S, 6S, ... AS, 5C, 6C, ... AC, 4D, 5D, ... AD, 4H, 5H, AH, RJ
+_black_deck = [FiveHundredCard(suit=suit, rank=rank) for suit in FiveHundredCard.black_suits for rank in FiveHundredCard.black_ranks]
+_red_deck = [FiveHundredCard(suit=suit, rank=rank) for suit in FiveHundredCard.red_suits for rank in FiveHundredCard.red_ranks]
+_deck = _black_deck + _red_deck + [FiveHundredCard(suit='RJ', rank='')]

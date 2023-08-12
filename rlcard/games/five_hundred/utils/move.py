@@ -8,7 +8,7 @@
 #   These classes are used to keep a move_sheet history of the moves in a round.
 #
 
-from .action_event import ActionEvent, BidAction, PassAction, DblAction, RdblAction, PlayCardAction
+from .action_event import ActionEvent, BidAction, PassAction, PlayCardAction
 from .five_hundred_card import FiveHundredCard
 
 from ..player import FiveHundredPlayer
@@ -32,6 +32,7 @@ class CallMove(PlayerMove):  # Interface
         super().__init__(player=player, action=action)
 
 
+# TODO: Why - for the record I think
 class DealHandMove(FiveHundredMove):
 
     def __init__(self, dealer: FiveHundredPlayer, shuffled_deck: [FiveHundredCard]):
@@ -48,24 +49,6 @@ class MakePassMove(CallMove):
 
     def __init__(self, player: FiveHundredPlayer):
         super().__init__(player=player, action=PassAction())
-
-    def __str__(self):
-        return f'{self.player} {self.action}'
-
-
-class MakeDblMove(CallMove):
-
-    def __init__(self, player: FiveHundredPlayer):
-        super().__init__(player=player, action=DblAction())
-
-    def __str__(self):
-        return f'{self.player} {self.action}'
-
-
-class MakeRdblMove(CallMove):
-
-    def __init__(self, player: FiveHundredPlayer):
-        super().__init__(player=player, action=RdblAction())
 
     def __str__(self):
         return f'{self.player} {self.action}'
