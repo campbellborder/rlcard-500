@@ -37,6 +37,14 @@ class FiveHundredCard(Card):
             else:
                 self.card_id = 10 * suit_index + rank_index + suit_index % 2
 
+    def get_round_suit(trump_suit: str or None):
+        if self.suit == "RJ":
+            return trump_suit
+        if trump_suit and self.rank == 'J' and self.suit == _off_trump_suits[trump_suit]:
+                return trump_suit
+        return self.suit
+
+
     def __str__(self):
         return f'{self.rank}{self.suit}'
 
@@ -48,3 +56,4 @@ class FiveHundredCard(Card):
 _black_deck = [FiveHundredCard(suit=suit, rank=rank) for suit in FiveHundredCard.black_suits for rank in FiveHundredCard.black_ranks]
 _red_deck = [FiveHundredCard(suit=suit, rank=rank) for suit in FiveHundredCard.red_suits for rank in FiveHundredCard.red_ranks]
 _deck = _black_deck + _red_deck + [FiveHundredCard(suit='RJ', rank='')]
+_off_trump_suits = {'S': 'C', 'C': 'S', 'D': 'H', 'H', 'D'}

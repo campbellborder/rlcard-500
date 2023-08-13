@@ -25,7 +25,7 @@ class ActionEvent(object):  # Interface
     pass_action_id = 1
     first_bid_action_id = 2
     last_bid_action_id = 26
-    misere_bid_action_id = 27
+    misere_bid_action_id = 13
     open_misere_bid_action_id = 28
     first_play_card_action_id = 29
     last_play_card_action_id = 71
@@ -49,7 +49,7 @@ class ActionEvent(object):  # Interface
             bid_suit = FiveHundredCard.suits[bid_suit_id] if bid_suit_id < 4 else None
             return BidAction(bid_amount, bid_suit)
         elif action_id == ActionEvent.misere_bid_action_id:
-            return BidAction(None, None, misere=True, open=False)
+            return BidAction(None, None, misere=True)
         elif action_id == ActionEvent.open_misere_bid_action_id:
             return BidAction(None, None, misere=True, open=True)
         elif ActionEvent.first_play_card_action_id <= action_id <= ActionEvent.last_play_card_action_id:
@@ -97,9 +97,10 @@ class BidAction(CallActionEvent):
 
         # Get action id
         if misere:
-            bid_action_id = 28 if open else 27
+            bid_action_id = 28 if open else 13
         else:
             bid_action_id = bid_suit_id + 5 * (bid_amount - 6) + ActionEvent.first_bid_action_id
+            if bid_action_id >= misere_bid_action_id: bid_action_id += 1
         super().__init__(action_id=bid_action_id)
         
         self.bid_amount = bid_amount

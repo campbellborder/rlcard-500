@@ -35,6 +35,7 @@ class FiveHundredJudger:
         if not self.game.is_over():
             current_player = self.game.round.get_current_player()
             if not self.game.round.is_bidding_over():
+                # Pass or call
                 legal_actions.append(PassAction())
                 last_make_bid_move: MakeBidMove or None = None
                 for move in reversed(self.game.round.move_sheet):
@@ -43,16 +44,29 @@ class FiveHundredJudger:
                         break
                 first_bid_action_id = ActionEvent.first_bid_action_id
                 next_bid_action_id = last_make_bid_move.action.action_id + 1 if last_make_bid_move else first_bid_action_id
-                for bid_action_id in range(next_bid_action_id, first_bid_action_id + 35):
+                for bid_action_id in range(next_bid_action_id, first_bid_action_id + 27):
                     action = BidAction.from_action_id(action_id=bid_action_id)
                     legal_actions.append(action)
+            elif not self.game.round.is_discarding_over():
+                # Discard kitty
+                hand = self.game.round.players[current_player.player_id].hand
+                for card in hand:
+                    action = PlayCardAction(card=card)
+                    legal_actions.append(action)
             else:
+                # Play card
                 trick_moves = self.game.round.get_trick_moves()
                 hand = self.game.round.players[current_player.player_id].hand
                 legal_cards = hand
                 if trick_moves and len(trick_moves) < 4:
+
+                    # Get led suit
                     led_card: FiveHundredCard = trick_moves[0].card
-                    cards_of_led_suit = [card for card in hand if card.suit == led_card.suit]
+                    trump_suit = self.game.round.get_trump_suit()
+                    led_suit = led_card.get_round_suit(trump_suit)
+                    
+                    # Get legal cards
+                    cards_of_led_suit = [card for card in hand if card.get_round_suit(trump_suit) == led_suit]
                     if cards_of_led_suit:
                         legal_cards = cards_of_led_suit
                 for card in legal_cards:

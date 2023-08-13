@@ -29,7 +29,7 @@ class FiveHundredRound:
     def round_phase(self):
         if self.is_over():
             result = 'round over'
-        elif self.is_discarding_over():
+        elif not self.is_discarding_over():
             result = 'discard kitty'
         elif self.is_bidding_over():
             result = 'play card'
@@ -148,6 +148,21 @@ class FiveHundredRound:
         if self.contract_bid_move:
             trump_suit = self.contract_bid_move.action.bid_suit
         return trump_suit
+
+    # def get_off_trump_suit(self) -> str or None:
+    #     ''' Gets the other suit of the same colour as the trump suit
+    #     '''
+    #     off_trump_suit = None
+    #     trump_suit = self.get_trump_suit()
+    #     if trump_suit == 'S':
+    #         off_trump_suit = 'C'
+    #     elif trump_suit == 'C':
+    #         off_trump_suit = 'S'
+    #     elif trump_suit == 'D':
+    #         off_trump_suit = 'H'
+    #     elif trump_suit == 'H':
+    #         off_trump_suit = 'D'
+    #     return off_trump_suit
     
     def distribute_kitty(self):
         ''' Distribute the kitty to the declarer
@@ -210,15 +225,15 @@ class FiveHundredRound:
         
         if not self.is_over():
             if self.is_bidding_over():
-                # Next player in rotation
-                self.current_player_id = (self.current_player_id + 1) % 4
+                if not self.is_discarding_over():
+                    self.current_player_id = self.contract_bid_move.player.player_id
+                else: # Next player in rotation
+                    self.current_player_id = (self.current_player_id + 1) % 4
             else:
                 # Next non-passed player
                 while True:
                     self.current_player_id = (self.current_player_id + 1) % 4
                     if not self.players_passed[self.current_player_id]: break
-
-        self.current_player_id = (self.current_player_id + 1) % 4
 
     def get_declarer(self) -> FiveHundredPlayer or None:
         declarer = None
@@ -269,20 +284,16 @@ class FiveHundredRound:
         return state
 
     def print_scene(self):
-        print(f'===== Board: {self.tray.board_id} move: {len(self.move_sheet)} player: {self.players[self.current_player_id]} phase: {self.round_phase} =====')
-        print(f'dealer={self.players[self.tray.dealer_id]}')
-        print(f'vul={self.vul}')
+        print(f'===== Board: {self.tray.board_id} | Dealer: {self.players[self.tray.dealer_id]} | Player: {self.players[self.current_player_id]} | Phase: {self.round_phase} =====')
         if not self.is_bidding_over() or self.play_card_count == 0:
             last_move = self.move_sheet[-1]
             last_call_text = f'{last_move}' if isinstance(last_move, CallMove) else 'None'
             print(f'last call: {last_call_text}')
         if self.is_bidding_over() and self.contract_bid_move:
             bid_suit = self.contract_bid_move.action.bid_suit
-            doubling_cube = self.doubling_cube
             if not bid_suit:
                 bid_suit = 'NT'
-            doubling_cube_text = "" if doubling_cube == 1 else "dbl" if doubling_cube == 2 else "rdbl"
-            print(f'contract: {self.contract_bid_move.player} {self.contract_bid_move.action.bid_amount}{bid_suit} {doubling_cube_text}')
+            print(f'contract: {self.contract_bid_move.player} {self.contract_bid_move.action.bid_amount}{bid_suit}')
         for player in self.players:
             print(f'{player}: {[str(card) for card in player.hand]}')
         if self.is_bidding_over():
