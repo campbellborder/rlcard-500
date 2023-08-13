@@ -21,7 +21,7 @@ class FiveHundredDealer:
         self.np_random.shuffle(self.shuffled_deck)
         self.stock_pile: List[FiveHundredCard] = self.shuffled_deck.copy()
 
-    def deal_to_hand(self, hand: [FiveHundredCard], num: int):
+    def deal_cards(self, hand: [FiveHundredCard], num: int):
         '''
         Args:
             hand ([FiveHundredCard]): The list of cards to append to, be it a players hand or the kitty

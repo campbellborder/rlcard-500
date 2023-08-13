@@ -78,8 +78,8 @@ class FiveHundredRound:
         for num_cards in [3, 4, 3]:
             for player_id in range(self.num_players):
                 player = self.players[player_id]
-                self.dealer.deal_to_hand(hand=player.hand, num=num_cards)
-            self.dealer.deal_to_hand(hand=self.kitty, num=1)
+                self.dealer.deal_cards(hand=player.hand, num=num_cards)
+            self.dealer.deal_cards(hand=self.kitty, num=1)
 
     def is_bidding_over(self) -> bool:
         ''' Return whether the current bidding is over

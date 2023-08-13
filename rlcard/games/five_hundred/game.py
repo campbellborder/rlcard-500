@@ -96,12 +96,7 @@ class FiveHundredGame:
             state (dict): The information of the state
         '''
         state = {}
-        if not self.is_over():
-            state['player_id'] = player_id
-            state['current_player_id'] = self.round.current_player_id
-            state['hand'] = self.round.players[player_id].hand
-        else:
-            state['player_id'] = player_id
-            state['current_player_id'] = self.round.current_player_id
-            state['hand'] = self.round.players[player_id].hand
+        state['player_id'] = player_id
+        state['current_player_id'] = self.round.current_player_id
+        state['hand'] = self.round.players[player_id].hand
         return state

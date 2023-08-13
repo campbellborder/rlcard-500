@@ -12,10 +12,12 @@ from .five_hundred_card import FiveHundredCard
 # Action_ids:
 #       0 -> no_bid_action_id
 #       1 -> pass_action_id
-#       2 to 26 -> bid_action_id (bid amount by suit or NT)
-#       27 -> misere_action_id
+#       2 to 12 -> bid_action_id (6S to 8S)
+#       13 -> misere_action_id
+#       14 to 27 -> bid_action_id (8C to 10NT)
 #       28 -> open_misere_action_id
-#       29 to 71 -> play_card_action_id
+#       29 to 70 -> play_card_action_id (normal cards)
+#       71 to 74 -> play_card_action_id (joker, as spade, club, diamond, heart)
 # ====================================
 
 
@@ -24,11 +26,13 @@ class ActionEvent(object):  # Interface
     no_bid_action_id = 0
     pass_action_id = 1
     first_bid_action_id = 2
-    last_bid_action_id = 26
+    last_bid_action_id = 27
     misere_bid_action_id = 13
     open_misere_bid_action_id = 28
     first_play_card_action_id = 29
-    last_play_card_action_id = 71
+    last_play_card_action_id = 70
+    first_play_joker_action_id = 71
+    last_play_joker_action_id = 74
 
     def __init__(self, action_id: int):
         self.action_id = action_id
@@ -43,15 +47,23 @@ class ActionEvent(object):  # Interface
     def from_action_id(action_id: int):
         if action_id == ActionEvent.pass_action_id:
             return PassAction()
+        elif action_id == ActionEvent.misere_bid_action_id:
+            return BidAction(None, None, misere=True)
+        elif action_id == ActionEvent.open_misere_bid_action_id:
+            return BidAction(None, None, misere=True, open=True)
         elif ActionEvent.first_bid_action_id <= action_id <= ActionEvent.last_bid_action_id:
             bid_amount = (action_id - ActionEvent.first_bid_action_id) // 5 + 6
             bid_suit_id = (action_id - ActionEvent.first_bid_action_id) % 5
             bid_suit = FiveHundredCard.suits[bid_suit_id] if bid_suit_id < 4 else None
             return BidAction(bid_amount, bid_suit)
-        elif action_id == ActionEvent.misere_bid_action_id:
-            return BidAction(None, None, misere=True)
-        elif action_id == ActionEvent.open_misere_bid_action_id:
-            return BidAction(None, None, misere=True, open=True)
+
+        elif ActionEvent.first_play_joker_action_id <= action_id <= ActionEvent.last_play_joker_action_id:
+            suit_id = action_id - ActionEvent.first_play_joker_action_id
+            suit = FiveHundredCard.suits[suit_id]
+            card_id = ActionEvent.first_play_joker_action_id - ActionEvent.first_play_card_action_id
+            card = FiveHundredCard.card(card_id=card_id)
+            card.suit = suit
+            return PlayCardAction(card=card)
         elif ActionEvent.first_play_card_action_id <= action_id <= ActionEvent.last_play_card_action_id:
             card_id = action_id - ActionEvent.first_play_card_action_id
             card = FiveHundredCard.card(card_id=card_id)
@@ -63,7 +75,7 @@ class ActionEvent(object):  # Interface
     def get_num_actions():
         ''' Return the number of possible actions in the game
         '''
-        return 1 + 1 + 27 + 43  # no_bid, pass, 27 bids, 43 play_cards
+        return 1 + 1 + 27 + 46  # no_bid, pass, 27 bids, 46 play_cards
 
 
 class CallActionEvent(ActionEvent):  # Interface
@@ -100,7 +112,7 @@ class BidAction(CallActionEvent):
             bid_action_id = 28 if open else 13
         else:
             bid_action_id = bid_suit_id + 5 * (bid_amount - 6) + ActionEvent.first_bid_action_id
-            if bid_action_id >= misere_bid_action_id: bid_action_id += 1
+            if bid_action_id >= ActionEvent.misere_bid_action_id: bid_action_id += 1
         super().__init__(action_id=bid_action_id)
         
         self.bid_amount = bid_amount

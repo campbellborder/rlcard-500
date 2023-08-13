@@ -203,108 +203,108 @@ class DefaultFiveHundredStateExtractor(FiveHundredStateExtractor):
             (numpy.array): The extracted state
         '''
         extracted_state = {}
-        legal_actions: OrderedDict = self.get_legal_actions(game=game)
-        raw_legal_actions = list(legal_actions.keys())
-        current_player = game.round.get_current_player()
-        current_player_id = current_player.player_id
+        # legal_actions: OrderedDict = self.get_legal_actions(game=game)
+        # raw_legal_actions = list(legal_actions.keys())
+        # current_player = game.round.get_current_player()
+        # current_player_id = current_player.player_id
 
-        # construct hands_rep of hands of players
-        hands_rep = [np.zeros(52, dtype=int) for _ in range(4)]
-        if not game.is_over():
-            for card in game.round.players[current_player_id].hand:
-                hands_rep[current_player_id][card.card_id] = 1
-            if game.round.is_bidding_over():
-                dummy = game.round.get_dummy()
-                other_known_player = dummy if dummy.player_id != current_player_id else game.round.get_declarer()
-                for card in other_known_player.hand:
-                    hands_rep[other_known_player.player_id][card.card_id] = 1
+        # # construct hands_rep of hands of players
+        # hands_rep = [np.zeros(52, dtype=int) for _ in range(4)]
+        # if not game.is_over():
+        #     for card in game.round.players[current_player_id].hand:
+        #         hands_rep[current_player_id][card.card_id] = 1
+        #     if game.round.is_bidding_over():
+        #         dummy = game.round.get_dummy()
+        #         other_known_player = dummy if dummy.player_id != current_player_id else game.round.get_declarer()
+        #         for card in other_known_player.hand:
+        #             hands_rep[other_known_player.player_id][card.card_id] = 1
 
-        # construct trick_pile_rep
-        trick_pile_rep = [np.zeros(52, dtype=int) for _ in range(4)]
-        if game.round.is_bidding_over() and not game.is_over():
-            trick_moves = game.round.get_trick_moves()
-            for move in trick_moves:
-                player = move.player
-                card = move.card
-                trick_pile_rep[player.player_id][card.card_id] = 1
+        # # construct trick_pile_rep
+        # trick_pile_rep = [np.zeros(52, dtype=int) for _ in range(4)]
+        # if game.round.is_bidding_over() and not game.is_over():
+        #     trick_moves = game.round.get_trick_moves()
+        #     for move in trick_moves:
+        #         player = move.player
+        #         card = move.card
+        #         trick_pile_rep[player.player_id][card.card_id] = 1
 
-        # construct hidden_card_rep (during trick taking phase)
-        hidden_cards_rep = np.zeros(52, dtype=int)
-        if not game.is_over():
-            if game.round.is_bidding_over():
-                declarer = game.round.get_declarer()
-                if current_player_id % 2 == declarer.player_id % 2:
-                    hidden_player_ids = [(current_player_id + 1) % 4, (current_player_id + 3) % 4]
-                else:
-                    hidden_player_ids = [declarer.player_id, (current_player_id + 2) % 4]
-                for hidden_player_id in hidden_player_ids:
-                    for card in game.round.players[hidden_player_id].hand:
-                        hidden_cards_rep[card.card_id] = 1
-            else:
-                for player in game.round.players:
-                    if player.player_id != current_player_id:
-                        for card in player.hand:
-                            hidden_cards_rep[card.card_id] = 1
+        # # construct hidden_card_rep (during trick taking phase)
+        # hidden_cards_rep = np.zeros(52, dtype=int)
+        # if not game.is_over():
+        #     if game.round.is_bidding_over():
+        #         declarer = game.round.get_declarer()
+        #         if current_player_id % 2 == declarer.player_id % 2:
+        #             hidden_player_ids = [(current_player_id + 1) % 4, (current_player_id + 3) % 4]
+        #         else:
+        #             hidden_player_ids = [declarer.player_id, (current_player_id + 2) % 4]
+        #         for hidden_player_id in hidden_player_ids:
+        #             for card in game.round.players[hidden_player_id].hand:
+        #                 hidden_cards_rep[card.card_id] = 1
+        #     else:
+        #         for player in game.round.players:
+        #             if player.player_id != current_player_id:
+        #                 for card in player.hand:
+        #                     hidden_cards_rep[card.card_id] = 1
 
-        # construct vul_rep
-        vul_rep = np.array(game.round.tray.vul, dtype=int)
+        # # construct vul_rep
+        # vul_rep = np.array(game.round.tray.vul, dtype=int)
 
-        # construct dealer_rep
-        dealer_rep = np.zeros(4, dtype=int)
-        dealer_rep[game.round.tray.dealer_id] = 1
+        # # construct dealer_rep
+        # dealer_rep = np.zeros(4, dtype=int)
+        # dealer_rep[game.round.tray.dealer_id] = 1
 
-        # construct current_player_rep
-        current_player_rep = np.zeros(4, dtype=int)
-        current_player_rep[current_player_id] = 1
+        # # construct current_player_rep
+        # current_player_rep = np.zeros(4, dtype=int)
+        # current_player_rep[current_player_id] = 1
 
-        # construct is_bidding_rep
-        is_bidding_rep = np.array([1] if game.round.is_bidding_over() else [0])
+        # # construct is_bidding_rep
+        # is_bidding_rep = np.array([1] if game.round.is_bidding_over() else [0])
 
-        # construct bidding_rep
-        bidding_rep = np.zeros(self.max_bidding_rep_index, dtype=int)
-        bidding_rep_index = game.round.dealer_id  # no_bid_action_ids allocated at start so that north always 'starts' the bidding
-        for move in game.round.move_sheet:
-            if bidding_rep_index >= self.max_bidding_rep_index:
-                break
-            elif isinstance(move, PlayCardMove):
-                break
-            elif isinstance(move, CallMove):
-                bidding_rep[bidding_rep_index] = move.action.action_id
-                bidding_rep_index += 1
+        # # construct bidding_rep
+        # bidding_rep = np.zeros(self.max_bidding_rep_index, dtype=int)
+        # bidding_rep_index = game.round.dealer_id  # no_bid_action_ids allocated at start so that north always 'starts' the bidding
+        # for move in game.round.move_sheet:
+        #     if bidding_rep_index >= self.max_bidding_rep_index:
+        #         break
+        #     elif isinstance(move, PlayCardMove):
+        #         break
+        #     elif isinstance(move, CallMove):
+        #         bidding_rep[bidding_rep_index] = move.action.action_id
+        #         bidding_rep_index += 1
 
-        # last_bid_rep
-        last_bid_rep = np.zeros(self.last_bid_rep_size, dtype=int)
-        last_move = game.round.move_sheet[-1]
-        if isinstance(last_move, CallMove):
-            last_bid_rep[last_move.action.action_id - ActionEvent.no_bid_action_id] = 1
+        # # last_bid_rep
+        # last_bid_rep = np.zeros(self.last_bid_rep_size, dtype=int)
+        # last_move = game.round.move_sheet[-1]
+        # if isinstance(last_move, CallMove):
+        #     last_bid_rep[last_move.action.action_id - ActionEvent.no_bid_action_id] = 1
 
-        # bid_amount_rep and trump_suit_rep
-        bid_amount_rep = np.zeros(8, dtype=int)
-        trump_suit_rep = np.zeros(5, dtype=int)
-        if game.round.is_bidding_over() and not game.is_over() and game.round.play_card_count == 0:
-            contract_bid_move = game.round.contract_bid_move
-            if contract_bid_move:
-                bid_amount_rep[contract_bid_move.action.bid_amount] = 1
-                bid_suit = contract_bid_move.action.bid_suit
-                bid_suit_index = 4 if not bid_suit else FiveHundredCard.suits.index(bid_suit)
-                trump_suit_rep[bid_suit_index] = 1
+        # # bid_amount_rep and trump_suit_rep
+        # bid_amount_rep = np.zeros(8, dtype=int)
+        # trump_suit_rep = np.zeros(5, dtype=int)
+        # if game.round.is_bidding_over() and not game.is_over() and game.round.play_card_count == 0:
+        #     contract_bid_move = game.round.contract_bid_move
+        #     if contract_bid_move:
+        #         bid_amount_rep[contract_bid_move.action.bid_amount] = 1
+        #         bid_suit = contract_bid_move.action.bid_suit
+        #         bid_suit_index = 4 if not bid_suit else FiveHundredCard.suits.index(bid_suit)
+        #         trump_suit_rep[bid_suit_index] = 1
 
-        rep = []
-        rep += hands_rep
-        rep += trick_pile_rep
-        rep.append(hidden_cards_rep)
-        rep.append(vul_rep)
-        rep.append(dealer_rep)
-        rep.append(current_player_rep)
-        rep.append(is_bidding_rep)
-        rep.append(bidding_rep)
-        rep.append(last_bid_rep)
-        rep.append(bid_amount_rep)
-        rep.append(trump_suit_rep)
+        # rep = []
+        # rep += hands_rep
+        # rep += trick_pile_rep
+        # rep.append(hidden_cards_rep)
+        # rep.append(vul_rep)
+        # rep.append(dealer_rep)
+        # rep.append(current_player_rep)
+        # rep.append(is_bidding_rep)
+        # rep.append(bidding_rep)
+        # rep.append(last_bid_rep)
+        # rep.append(bid_amount_rep)
+        # rep.append(trump_suit_rep)
 
-        obs = np.concatenate(rep)
-        extracted_state['obs'] = obs
-        extracted_state['legal_actions'] = legal_actions
-        extracted_state['raw_legal_actions'] = raw_legal_actions
-        extracted_state['raw_obs'] = obs
+        # obs = np.concatenate(rep)
+        # extracted_state['obs'] = obs
+        # extracted_state['legal_actions'] = legal_actions
+        # extracted_state['raw_legal_actions'] = raw_legal_actions
+        # extracted_state['raw_obs'] = obs
         return extracted_state

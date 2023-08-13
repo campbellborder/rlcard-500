@@ -72,4 +72,4 @@ class FiveHundredCard(Card):
 _black_deck = [FiveHundredCard(suit=suit, rank=rank) for suit in FiveHundredCard.black_suits for rank in FiveHundredCard.black_ranks]
 _red_deck = [FiveHundredCard(suit=suit, rank=rank) for suit in FiveHundredCard.red_suits for rank in FiveHundredCard.red_ranks]
 _deck = _black_deck + _red_deck + [FiveHundredCard(suit='RJ', rank='')]
-_off_trump_suits = {'S': 'C', 'C': 'S', 'D': 'H', 'H', 'D'}
+_off_trump_suits = {'S': 'C', 'C': 'S', 'D': 'H', 'H': 'D'}
