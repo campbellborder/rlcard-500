@@ -37,13 +37,29 @@ class FiveHundredCard(Card):
             else:
                 self.card_id = 10 * suit_index + rank_index + suit_index % 2
 
-    def get_round_suit(trump_suit: str or None):
+    def get_round_suit(self, trump_suit: str or None):
         if self.suit == "RJ":
             return trump_suit
-        if trump_suit and self.rank == 'J' and self.suit == _off_trump_suits[trump_suit]:
-                return trump_suit
+        elif trump_suit and self.is_left_bower(trump_suit):
+            return trump_suit
         return self.suit
 
+    def get_round_rank(self, trump_suit):
+
+        if self.suit == "RJ":
+            return 100
+        elif trump_suit and self.is_right_bower():
+            return 99
+        elif trump_suit and self.is_left_bower():
+            return 98
+        else:
+            return self.ranks.index(self.rank)
+
+    def is_right_bower(self, trump_suit):
+        return self.rank == 'J' and self.suit == trump_suit
+
+    def is_left_bower(self, trump_suit):
+        return self.rank == 'J' and self.suit == _off_trump_suits[trump_suit]
 
     def __str__(self):
         return f'{self.rank}{self.suit}'

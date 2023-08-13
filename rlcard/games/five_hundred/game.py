@@ -58,6 +58,8 @@ class FiveHundredGame:
 
         # If round is over, start a new round
         if self.round.is_over():
+            round_points = self.round.get_points()
+            self.scores = tuple(sum(x) for x in zip(self.scores, round_points))
             self.board_id = (self.board_id + 1) % 4
             self.round = FiveHundredRound(board_id=self.board_id, np_random=self.np_random)
 

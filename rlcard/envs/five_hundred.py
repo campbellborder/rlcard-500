@@ -91,13 +91,14 @@ class FiveHundredEnv(Env):
         '''
         return ActionEvent.from_action_id(action_id=action_id)
 
+    # TODO: why?
     def _get_legal_actions(self):
         ''' Get all legal actions for current state.
 
         Returns:
             (list): A list of legal actions' id.
         '''
-        raise NotImplementedError  # wch: not needed
+        raise NotImplementedError
 
 
 class FiveHundredPayoffDelegate(object):

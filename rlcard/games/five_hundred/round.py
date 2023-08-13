@@ -148,21 +148,6 @@ class FiveHundredRound:
         if self.contract_bid_move:
             trump_suit = self.contract_bid_move.action.bid_suit
         return trump_suit
-
-    # def get_off_trump_suit(self) -> str or None:
-    #     ''' Gets the other suit of the same colour as the trump suit
-    #     '''
-    #     off_trump_suit = None
-    #     trump_suit = self.get_trump_suit()
-    #     if trump_suit == 'S':
-    #         off_trump_suit = 'C'
-    #     elif trump_suit == 'C':
-    #         off_trump_suit = 'S'
-    #     elif trump_suit == 'D':
-    #         off_trump_suit = 'H'
-    #     elif trump_suit == 'H':
-    #         off_trump_suit = 'D'
-    #     return off_trump_suit
     
     def distribute_kitty(self):
         ''' Distribute the kitty to the declarer
@@ -189,37 +174,38 @@ class FiveHundredRound:
     def play_card(self, action: PlayCardAction):
         # when current_player takes PlayCardAction step, the move is recorded and executed
         # TODO: if still bidding, error
+        # TODO: check if valid move?
         current_player = self.players[self.current_player_id]
         self.move_sheet.append(PlayCardMove(current_player, action))
-        card = action.card
-        current_player.remove_card_from_hand(card=card)
-
+        
         # Discarding kitty
         if not self.is_discarding_over():
-            self.kitty.append(card)
-            return
-        
-        # Playing a card
-        self.play_card_count += 1
-        trick_moves = self.get_trick_moves()
-        if len(trick_moves) == 4:
-            trump_suit = self.get_trump_suit()
-            winning_card = trick_moves[0].card
-            trick_winner = trick_moves[0].player
-            for move in trick_moves[1:]:
-                trick_card = move.card
-                trick_player = move.player
-                if trick_card.suit == winning_card.suit:
-                    if trick_card.card_id > winning_card.card_id:
-                        winning_card = trick_card
-                        trick_winner = trick_player
-                elif trick_card.suit == trump_suit:
-                    winning_card = trick_card
-                    trick_winner = trick_player
-            self.current_player_id = trick_winner.player_id
-            self.won_trick_counts[trick_winner.player_id % 2] += 1
+            current_player.remove_card_from_hand(action.card)
+            self.kitty.append(action.card)
         else:
-            self.next_player()
+            # Playing a card
+            self.play_card_count += 1
+            current_player.remove_card_from_hand(action.card)
+            if len(self.get_trick_moves()) == 4:
+                trick_winner = self.get_trick_winner()
+                self.current_player_id = trick_winner.player_id
+                self.won_trick_counts[trick_winner.player_id % 2] += 1
+            else:
+                self.next_player()
+
+    def get_trick_winner(self):
+        trick_moves = self.get_trick_moves()
+        trump_suit = self.get_trump_suit()
+
+        winning_move = trick_moves[0]
+        for move in trick_moves[1:]:
+            if move.card.get_round_suit(trump_suit) == winning_move.card.get_round_suit(trump_suit):
+                if move.card.get_round_rank(trump_suit) > winning_move.card.get_round_rank(trump_suit):
+                    winning_move = move
+            elif move.card.get_round_suit(trump_suit) == trump_suit:
+                winning_move = move
+
+        return winning_move.player
 
     def next_player(self):
         
@@ -240,27 +226,39 @@ class FiveHundredRound:
         if self.contract_bid_move:
             declarer = self.contract_bid_move.player
         return declarer
+    
+    def get_points(self) -> (int, int):
+        points = (0, 0)
+        if self.is_over():
+            bid_points = self.contract_bid_move.action.bid_points
+            declaring_team = self.get_declarer().player_id % 2
+            if self.won_trick_counts[declaring_team] >= self.contract_bid_move.action.bid_amount:
+                points[declaring_team] += bid_points
+            else:
+                points[declaring_team] -= bid_points
+            points[1 - declaring_team] += self.won_trick_counts[1 - declaring_team] * 10
+        return points
 
-    def get_dummy(self) -> FiveHundredPlayer or None:
-        dummy = None
-        declarer = self.get_declarer()
-        if declarer:
-            dummy = self.players[(declarer.player_id + 2) % 4]
-        return dummy
+    # def get_dummy(self) -> FiveHundredPlayer or None:
+    #     dummy = None
+    #     declarer = self.get_declarer()
+    #     if declarer:
+    #         dummy = self.players[(declarer.player_id + 2) % 4]
+    #     return dummy
 
-    def get_left_defender(self) -> FiveHundredPlayer or None:
-        left_defender = None
-        declarer = self.get_declarer()
-        if declarer:
-            left_defender = self.players[(declarer.player_id + 1) % 4]
-        return left_defender
+    # def get_left_defender(self) -> FiveHundredPlayer or None:
+    #     left_defender = None
+    #     declarer = self.get_declarer()
+    #     if declarer:
+    #         left_defender = self.players[(declarer.player_id + 1) % 4]
+    #     return left_defender
 
-    def get_right_defender(self) -> FiveHundredPlayer or None:
-        right_defender = None
-        declarer = self.get_declarer()
-        if declarer:
-            right_defender = self.players[(declarer.player_id + 3) % 4]
-        return right_defender
+    # def get_right_defender(self) -> FiveHundredPlayer or None:
+    #     right_defender = None
+    #     declarer = self.get_declarer()
+    #     if declarer:
+    #         right_defender = self.players[(declarer.player_id + 3) % 4]
+    #     return right_defender
 
     def get_perfect_information(self):
         state = {}
