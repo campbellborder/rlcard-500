@@ -52,6 +52,9 @@ class MakePassMove(CallMove):
 
     def __str__(self):
         return f'{self.player} {self.action}'
+    
+    def __repr__(self):
+        return "P"
 
 
 class MakeBidMove(CallMove):
@@ -62,6 +65,9 @@ class MakeBidMove(CallMove):
 
     def __str__(self):
         return f'{self.player} bids {self.action}'
+    
+    def __repr__(self):
+        return self.action.__repr__()
 
 
 class PlayCardMove(PlayerMove):

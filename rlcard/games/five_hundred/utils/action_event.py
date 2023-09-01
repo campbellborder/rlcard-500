@@ -122,7 +122,7 @@ class BidAction(CallActionEvent):
 
     def __str__(self):
         if self.misere:
-            return 'Open misere' if self.open else 'Misere'
+            return 'OM' if self.open else 'M'
         bid_suit = self.bid_suit
         if not bid_suit:
             bid_suit = 'NT'

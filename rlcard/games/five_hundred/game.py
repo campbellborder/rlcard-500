@@ -100,3 +100,14 @@ class FiveHundredGame:
         state['current_player_id'] = self.round.current_player_id
         state['hand'] = self.round.players[player_id].hand
         return state
+
+    def get_perfect_information(self):
+        ''' Get state of entire game
+
+        Return:
+            state (dict): The information of the state
+        '''
+        state = self.round.get_perfect_information()
+        state["scores"] = list(self.scores)
+        return state
+

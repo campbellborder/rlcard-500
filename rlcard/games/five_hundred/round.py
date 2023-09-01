@@ -28,13 +28,13 @@ class FiveHundredRound:
     @property
     def round_phase(self):
         if self.is_over():
-            result = 'round over'
+            result = 'over'
+        elif not self.is_bidding_over():
+            result = 'bid'
         elif not self.is_discarding_over():
-            result = 'discard kitty'
-        elif self.is_bidding_over():
-            result = 'play card'
+            result = 'discard'
         else:
-            result = 'make bid'
+            result = 'play'
         return result
 
     def __init__(self, board_id: int, np_random):
@@ -239,63 +239,58 @@ class FiveHundredRound:
             points[1 - declaring_team] += self.won_trick_counts[1 - declaring_team] * 10
         return points
 
-    # def get_dummy(self) -> FiveHundredPlayer or None:
-    #     dummy = None
-    #     declarer = self.get_declarer()
-    #     if declarer:
-    #         dummy = self.players[(declarer.player_id + 2) % 4]
-    #     return dummy
-
-    # def get_left_defender(self) -> FiveHundredPlayer or None:
-    #     left_defender = None
-    #     declarer = self.get_declarer()
-    #     if declarer:
-    #         left_defender = self.players[(declarer.player_id + 1) % 4]
-    #     return left_defender
-
-    # def get_right_defender(self) -> FiveHundredPlayer or None:
-    #     right_defender = None
-    #     declarer = self.get_declarer()
-    #     if declarer:
-    #         right_defender = self.players[(declarer.player_id + 3) % 4]
-    #     return right_defender
-
     def get_perfect_information(self):
+        
         state = {}
-        last_call_move = None
+
+        # Get last bid
+        last_bid = None
         if not self.is_bidding_over() or self.play_card_count == 0:
             last_move = self.move_sheet[-1]
-            if isinstance(last_move, CallMove):
-                last_call_move = last_move
+            if isinstance(last_move, MakeBidMove):
+                last_bid = last_move
+
+        # Get each players bids
+        bids = [[], [], [], []]
+        for i in range(len(self.move_sheet)):
+            move = self.move_sheet[i]
+            if isinstance(move, CallMove):
+                bids[move.player.player_id].append(move)
+        
+        # Get current trick moves
         trick_moves = [None, None, None, None]
         if self.is_bidding_over():
             for trick_move in self.get_trick_moves():
                 trick_moves[trick_move.player.player_id] = trick_move.card
+        
         state['move_count'] = len(self.move_sheet)
         state['tray'] = self.tray
         state['current_player_id'] = self.current_player_id
         state['round_phase'] = self.round_phase
-        state['last_call_move'] = last_call_move
+        state['last_bid'] = last_bid
+        state['bids'] = bids
         state['contract'] = self.contract_bid_move if self.is_bidding_over() and self.contract_bid_move else None
         state['hands'] = [player.hand for player in self.players]
         state['trick_moves'] = trick_moves
         return state
 
     def print_scene(self):
-        print(f'===== Board: {self.tray.board_id} | Dealer: {self.players[self.tray.dealer_id]} | Player: {self.players[self.current_player_id]} | Phase: {self.round_phase} =====')
-        if not self.is_bidding_over() or self.play_card_count == 0:
-            last_move = self.move_sheet[-1]
-            last_call_text = f'{last_move}' if isinstance(last_move, CallMove) else 'None'
-            print(f'last call: {last_call_text}')
-        if self.is_bidding_over() and self.contract_bid_move:
-            bid_suit = self.contract_bid_move.action.bid_suit
-            if not bid_suit:
-                bid_suit = 'NT'
-            print(f'contract: {self.contract_bid_move.player} {self.contract_bid_move.action.bid_amount}{bid_suit}')
-        for player in self.players:
-            print(f'{player}: {[str(card) for card in player.hand]}')
-        if self.is_bidding_over():
-            trick_pile = ['None', 'None', 'None', 'None']
-            for trick_move in self.get_trick_moves():
-                trick_pile[trick_move.player.player_id] = trick_move.card
-            print(f'trick_pile: {[str(card) for card in trick_pile]}')
+        
+        raise NotImplementedError
+        # print(f'===== Board: {self.tray.board_id} | Dealer: {self.players[self.tray.dealer_id]} | Player: {self.players[self.current_player_id]} | Phase: {self.round_phase} =====')
+        # if not self.is_bidding_over() or self.play_card_count == 0:
+        #     last_move = self.move_sheet[-1]
+        #     last_call_text = f'{last_move}' if isinstance(last_move, CallMove) else 'None'
+        #     print(f'last call: {last_call_text}')
+        # if self.is_bidding_over() and self.contract_bid_move:
+        #     bid_suit = self.contract_bid_move.action.bid_suit
+        #     if not bid_suit:
+        #         bid_suit = 'NT'
+        #     print(f'contract: {self.contract_bid_move.player} {self.contract_bid_move.action.bid_amount}{bid_suit}')
+        # for player in self.players:
+        #     print(f'{player}: {[str(card) for card in player.hand]}')
+        # if self.is_bidding_over():
+        #     trick_pile = ['None', 'None', 'None', 'None']
+        #     for trick_move in self.get_trick_moves():
+        #         trick_pile[trick_move.player.player_id] = trick_move.card
+        #     print(f'trick_pile: {[str(card) for card in trick_pile]}')
