@@ -52,11 +52,14 @@ class ActionEvent(object):  # Interface
         elif action_id == ActionEvent.open_misere_bid_action_id:
             return BidAction(None, None, misere=True, open=True)
         elif ActionEvent.first_bid_action_id <= action_id <= ActionEvent.last_bid_action_id:
-            bid_amount = (action_id - ActionEvent.first_bid_action_id) // 5 + 6
-            bid_suit_id = (action_id - ActionEvent.first_bid_action_id) % 5
+            if action_id < ActionEvent.misere_bid_action_id:
+                bid_amount = (action_id - ActionEvent.first_bid_action_id) // 5 + 6
+                bid_suit_id = (action_id - ActionEvent.first_bid_action_id) % 5
+            else:
+                bid_amount = (action_id - ActionEvent.first_bid_action_id - 1) // 5 + 6
+                bid_suit_id = (action_id - ActionEvent.first_bid_action_id - 1) % 5
             bid_suit = FiveHundredCard.suits[bid_suit_id] if bid_suit_id < 4 else None
             return BidAction(bid_amount, bid_suit)
-
         elif ActionEvent.first_play_joker_action_id <= action_id <= ActionEvent.last_play_joker_action_id:
             suit_id = action_id - ActionEvent.first_play_joker_action_id
             suit = FiveHundredCard.suits[suit_id]
@@ -70,6 +73,10 @@ class ActionEvent(object):  # Interface
             return PlayCardAction(card=card)
         else:
             raise Exception(f'ActionEvent from_action_id: invalid action_id={action_id}')
+    
+    @staticmethod
+    def from_repr(repr):
+        return ActionEvent.from_action_id(string_reprs.index(repr))
 
     @staticmethod
     def get_num_actions():
@@ -88,10 +95,10 @@ class PassAction(CallActionEvent):
         super().__init__(action_id=ActionEvent.pass_action_id)
 
     def __str__(self):
-        return "pass"
+        return "P"
 
     def __repr__(self):
-        return "pass"
+        return "P"
 
 
 class BidAction(CallActionEvent):
@@ -144,3 +151,11 @@ class PlayCardAction(ActionEvent):
 
     def __repr__(self):
         return f"{self.card}"
+
+
+string_reprs = ["N", "P",
+                "6S", "6C", "6D", "6H", "6NT",
+                "7S", "7C", "7D", "7H", "7NT",
+                "8S", "M", "8C", "8D", "8H", "8NT",
+                "9S", "9C", "9D", "9H", "9NT",
+                "10S", "10D", "10C", "10H", "10NT", "OM"]
