@@ -48,9 +48,9 @@ class FiveHundredCard(Card):
 
         if self.suit == "RJ":
             return 100
-        elif trump_suit and self.is_right_bower():
+        elif trump_suit and self.is_right_bower(trump_suit):
             return 99
-        elif trump_suit and self.is_left_bower():
+        elif trump_suit and self.is_left_bower(trump_suit):
             return 98
         else:
             return self.ranks.index(self.rank)

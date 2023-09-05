@@ -27,6 +27,7 @@ class FiveHundredGame:
         self.round: FiveHundredRound or None = None  # must reset in init_game
         self.num_players: int = 4
         self.scores: (int, int) = (0, 0) # (N-S, E-W)
+        self.num_rounds = 0
 
     def init_game(self):
         ''' Initialize all characters in the game and start round 1
@@ -43,6 +44,7 @@ class FiveHundredGame:
         '''
         self.board_id = (self.board_id + 1) % 4
         self.round = FiveHundredRound(board_id=self.board_id, np_random=self.np_random)
+        self.num_rounds += 1
         
 
     def step(self, action: ActionEvent):
@@ -54,14 +56,19 @@ class FiveHundredGame:
             self.round.play_card(action=action)
         else:
             raise Exception(f'Unknown step action={action}')
+
         self.actions.append(action)
 
         # If round is over, start a new round
         if self.round.is_over():
             round_points = self.round.get_points()
             self.scores = tuple(sum(x) for x in zip(self.scores, round_points))
+            ## TODO: Can't reach 500 unless you bid
+            if self.is_over():
+                return
             self.board_id = (self.board_id + 1) % 4
             self.round = FiveHundredRound(board_id=self.board_id, np_random=self.np_random)
+            self.num_rounds += 1
 
         # Get next player and state
         next_player_id = self.round.current_player_id
@@ -85,9 +92,11 @@ class FiveHundredGame:
         return self.round.current_player_id
 
     def is_over(self) -> bool:
-        ''' Return whether the current round is over
+        ''' Return whether the game is over
         '''
-        return self.round.is_over()
+        team_won = self.scores[0] >= 500 or self.scores[1] >= 500
+        team_lost = self.scores[0] <= -500 or self.scores[1] <= -500
+        return team_won or team_lost
 
     def get_state(self, player_id: int):  # wch: not really used
         ''' Get player's state

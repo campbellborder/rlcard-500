@@ -36,7 +36,8 @@ class FiveHundredJudger:
             current_player = self.game.round.get_current_player()
             if not self.game.round.is_bidding_over():
                 # Pass or call
-                legal_actions.append(PassAction())
+                if not self.game.round.everyone_passed():
+                    legal_actions.append(PassAction())
                 last_make_bid_move: MakeBidMove or None = None
                 for move in reversed(self.game.round.move_sheet):
                     if isinstance(move, MakeBidMove):

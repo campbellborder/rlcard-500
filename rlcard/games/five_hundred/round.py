@@ -84,15 +84,12 @@ class FiveHundredRound:
     def is_bidding_over(self) -> bool:
         ''' Return whether the current bidding is over
         '''
-        is_bidding_over = False
-        if len(self.move_sheet) > 3: # If they have been at least 4 bids
-            num_pass_moves: int  = 0
-            for move in reversed(self.move_sheet):
-                if isinstance(move, MakePassMove):
-                    num_pass_moves += 1
-                    if num_pass_moves == 3: 
-                        is_bidding_over = True
-        return is_bidding_over
+        return sum(self.players_passed) == 3 and len(self.move_sheet) > 4 # Because of deal hand move
+
+    def everyone_passed(self) -> bool:
+        ''' Return whether 3 players have passed
+        '''
+        return sum(self.players_passed) == 3
     
     def is_discarding_over(self) -> bool:
         ''' Return whether the declarer has discarded the kitty
@@ -160,6 +157,8 @@ class FiveHundredRound:
         # TODO: If bidding is over, error
         current_player = self.players[self.current_player_id]
         if isinstance(action, PassAction):
+            if sum(self.players_passed) == 3:
+                raise Exception("Can't pass - three players have already passed")
             self.move_sheet.append(MakePassMove(current_player))
             self.players_passed[self.current_player_id] = 1
         elif isinstance(action, BidAction):
@@ -228,16 +227,22 @@ class FiveHundredRound:
         return declarer
     
     def get_points(self) -> (int, int):
-        points = (0, 0)
+        points = [0, 0]
         if self.is_over():
             bid_points = self.contract_bid_move.action.bid_points
             declaring_team = self.get_declarer().player_id % 2
-            if self.won_trick_counts[declaring_team] >= self.contract_bid_move.action.bid_amount:
+            if self.bid_achieved():
                 points[declaring_team] += bid_points
             else:
                 points[declaring_team] -= bid_points
             points[1 - declaring_team] += self.won_trick_counts[1 - declaring_team] * 10
         return points
+
+    def bid_achieved(self):
+        declaring_team = self.get_declarer().player_id % 2
+        if self.contract_bid_move.action.misere:
+            return self.won_trick_counts[declaring_team] == 0
+        return self.won_trick_counts[declaring_team] >= self.contract_bid_move.action.bid_amount
 
     def get_perfect_information(self):
         

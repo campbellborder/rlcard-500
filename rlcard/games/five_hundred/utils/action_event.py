@@ -103,6 +103,14 @@ class PassAction(CallActionEvent):
 
 class BidAction(CallActionEvent):
 
+    ## TODO: Calculate this
+    bid_points = {"N": 0, "P": 0,
+                "6S": 40,            "6C": 60, "6D": 80, "6H": 100, "6NT": 120,
+                "7S": 140,           "7C": 160, "7D": 180, "7H": 200, "7NT": 220,
+                "8S": 240, "M": 250, "8C": 260, "8D": 280, "8H": 300, "8NT": 320,
+                "9S": 340,           "9C": 360, "9D": 380, "9H": 400, "9NT": 420,
+                "10S": 440,          "10C": 460, "10D": 480, "10H": 500, "10NT": 520, "OM": 500}
+
     def __init__(self, bid_amount: int or None, bid_suit: str or None, misere=False, open=False):
         
         # Get bid suit id
@@ -117,6 +125,7 @@ class BidAction(CallActionEvent):
         # Get action id
         if misere:
             bid_action_id = 28 if open else 13
+            bid_amount = 10
         else:
             bid_action_id = bid_suit_id + 5 * (bid_amount - 6) + ActionEvent.first_bid_action_id
             if bid_action_id >= ActionEvent.misere_bid_action_id: bid_action_id += 1
@@ -126,6 +135,7 @@ class BidAction(CallActionEvent):
         self.bid_suit = bid_suit
         self.misere = misere
         self.open = open
+        self.bid_points = BidAction.bid_points[self.__str__()]
 
     def __str__(self):
         if self.misere:

@@ -16,7 +16,7 @@ class RandomAgent(object):
 
     @staticmethod
     def step(state):
-        ''' Predict the action given the curent state in gerenerating training data.
+        ''' Predict the action given the curent state in generating training data.
 
         Args:
             state (dict): An dictionary that represents the current state
