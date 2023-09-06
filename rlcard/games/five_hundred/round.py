@@ -123,16 +123,13 @@ class FiveHundredRound:
         ''' Return a list of the PlayCardMoves associated with the current trick
         '''
         trick_moves: List[PlayCardMove] = []
-        if self.is_bidding_over():
+        if self.is_bidding_over() and self.is_discarding_over():
             if self.play_card_count > 0:
                 trick_pile_count = self.play_card_count % 4
                 if trick_pile_count == 0:
                     trick_pile_count = 4  # wch: note this
                 trick_moves = self.move_sheet[-trick_pile_count:]
-                # TODO: is this ^ better than this:
-                # for move in self.move_sheet[-trick_pile_count:]:
-                #     if isinstance(move, PlayCardMove):
-                #         trick_moves.append(move)
+
                 # TODO: do we need this anymore?
                 if len(trick_moves) != trick_pile_count:
                     raise Exception(f'get_trick_moves: count of trick_moves={[str(move.card) for move in trick_moves]} does not equal {trick_pile_count}')
@@ -248,13 +245,6 @@ class FiveHundredRound:
         
         state = {}
 
-        # Get last bid
-        last_bid = None
-        if not self.is_bidding_over() or self.play_card_count == 0:
-            last_move = self.move_sheet[-1]
-            if isinstance(last_move, MakeBidMove):
-                last_bid = last_move
-
         # Get each players bids
         bids = [[], [], [], []]
         for i in range(len(self.move_sheet)):
@@ -263,20 +253,26 @@ class FiveHundredRound:
                 bids[move.player.player_id].append(move)
         
         # Get current trick moves
-        trick_moves = [None, None, None, None]
-        if self.is_bidding_over():
-            for trick_move in self.get_trick_moves():
-                trick_moves[trick_move.player.player_id] = trick_move.card
+        lead = None
+        ordered_trick_moves = [None, None, None, None]
+        if self.is_bidding_over() and self.is_discarding_over():
+            trick_moves = self.get_trick_moves()
+            for trick_move in trick_moves:
+                ordered_trick_moves[trick_move.player.player_id] = trick_move.card
+            if len(trick_moves):  
+                lead = trick_moves[0].player.player_id
+            else:
+                lead = self.current_player_id
         
         state['move_count'] = len(self.move_sheet)
         state['tray'] = self.tray
         state['current_player_id'] = self.current_player_id
         state['round_phase'] = self.round_phase
-        state['last_bid'] = last_bid
         state['bids'] = bids
         state['contract'] = self.contract_bid_move if self.is_bidding_over() and self.contract_bid_move else None
         state['hands'] = [player.hand for player in self.players]
-        state['trick_moves'] = trick_moves
+        state['trick_moves'] = ordered_trick_moves
+        state['lead'] = lead
         return state
 
     def print_scene(self):
