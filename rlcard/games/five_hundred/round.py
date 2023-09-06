@@ -139,7 +139,7 @@ class FiveHundredRound:
         ''' Gets the suit of the winning bid
         '''
         trump_suit = None
-        if self.contract_bid_move:
+        if self.is_bidding_over() and self.contract_bid_move:
             trump_suit = self.contract_bid_move.action.bid_suit
         return trump_suit
     
