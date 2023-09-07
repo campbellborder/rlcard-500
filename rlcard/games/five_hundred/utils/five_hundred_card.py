@@ -27,7 +27,7 @@ class FiveHundredCard(Card):
 
     def __init__(self, suit: str, rank: str):
         super().__init__(suit=suit, rank=rank)
-        if self.suit == "RJ":
+        if self.rank == "RJ":
             self.card_id = 42
         else:
             suit_index = FiveHundredCard.suits.index(self.suit)
@@ -38,7 +38,7 @@ class FiveHundredCard(Card):
                 self.card_id = 10 * suit_index + rank_index + suit_index % 2
 
     def get_round_suit(self, trump_suit: str or None):
-        if self.suit == "RJ":
+        if self.rank == "RJ":
             return trump_suit
         elif trump_suit and self.is_left_bower(trump_suit):
             return trump_suit
@@ -71,5 +71,5 @@ class FiveHundredCard(Card):
 # deck is always in order from 5S, 6S, ... AS, 5C, 6C, ... AC, 4D, 5D, ... AD, 4H, 5H, AH, RJ
 _black_deck = [FiveHundredCard(suit=suit, rank=rank) for suit in FiveHundredCard.black_suits for rank in FiveHundredCard.black_ranks]
 _red_deck = [FiveHundredCard(suit=suit, rank=rank) for suit in FiveHundredCard.red_suits for rank in FiveHundredCard.red_ranks]
-_deck = _black_deck + _red_deck + [FiveHundredCard(suit='RJ', rank='')]
+_deck = _black_deck + _red_deck + [FiveHundredCard(suit='', rank='RJ')]
 _off_trump_suits = {'S': 'C', 'C': 'S', 'D': 'H', 'H': 'D'}

@@ -73,10 +73,6 @@ class ActionEvent(object):  # Interface
             return PlayCardAction(card=card)
         else:
             raise Exception(f'ActionEvent from_action_id: invalid action_id={action_id}')
-    
-    @staticmethod
-    def from_repr(repr):
-        return ActionEvent.from_action_id(string_reprs.index(repr))
 
     @staticmethod
     def get_num_actions():
@@ -114,7 +110,7 @@ class BidAction(CallActionEvent):
     def __init__(self, bid_amount: int or None, bid_suit: str or None, misere=False, open=False):
         
         # Get bid suit id
-        suits = FiveHundredCard.suits
+        suits = FiveHundredCard.suits + ["NT"]
         if bid_suit and bid_suit not in suits:
             raise Exception(f'BidAction has invalid suit: {bid_suit}')
         elif bid_suit in suits:
@@ -161,15 +157,3 @@ class PlayCardAction(ActionEvent):
 
     def __repr__(self):
         return f"{self.card}"
-
-
-string_reprs = ["N", "P",
-                "6S",      "6C", "6D", "6H", "6NT",
-                "7S",      "7C", "7D", "7H", "7NT",
-                "8S", "M", "8C", "8D", "8H", "8NT",
-                "9S",      "9C", "9D", "9H", "9NT",
-                "10S",     "10C", "10D", "10H", "10NT", "OM",
-                      "5S", "6S", "7S", "8S", "9S", "TS", "JS", "QS", "KS", "AS",
-                      "5C", "6C", "7C", "8C", "9C", "TC", "JC", "QC", "KC", "AC",
-                "4D", "5D", "6D", "7D", "8D", "9D", "TD", "JD", "QD", "KD", "AD",
-                "4H", "5H", "6H", "7H", "8H", "9H", "TH", "JH", "QH", "KH", "AH"]
