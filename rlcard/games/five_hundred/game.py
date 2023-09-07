@@ -45,6 +45,7 @@ class FiveHundredGame:
         self.board_id = (self.board_id + 1) % 4
         self.round = FiveHundredRound(board_id=self.board_id, np_random=self.np_random)
         self.num_rounds += 1
+        self.judger.reset() # Reset led cards
         
 
     def step(self, action: ActionEvent):

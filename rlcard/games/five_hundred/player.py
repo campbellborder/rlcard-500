@@ -24,7 +24,10 @@ class FiveHundredPlayer:
         self.hand: List[FiveHundredCard] = []
 
     def remove_card_from_hand(self, card: FiveHundredCard):
-        self.hand.remove(card)
+        if card.rank == "RJ":
+            self.hand.remove(FiveHundredCard.card(42))
+        else:
+            self.hand.remove(card)
 
     def __str__(self):
         return ['N', 'E', 'S', 'W'][self.player_id]

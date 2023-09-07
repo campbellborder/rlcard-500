@@ -26,6 +26,10 @@ class FiveHundredJudger:
         :param game: FiveHundredGame
         '''
         self.game: FiveHundredGame = game
+        self.led_suits = []
+
+    def reset(self):
+        self.led_suits = []
 
     def get_legal_actions(self) -> List[ActionEvent]:
         """
@@ -59,18 +63,36 @@ class FiveHundredJudger:
                 trick_moves = self.game.round.get_trick_moves()
                 hand = self.game.round.players[current_player.player_id].hand
                 legal_cards = hand
-                if trick_moves and len(trick_moves) < 4:
+                leading = not (trick_moves and len(trick_moves) < 4)
+                if not leading:
 
                     # Get led suit
                     led_card: FiveHundredCard = trick_moves[0].card
                     trump_suit = self.game.round.get_trump_suit()
                     led_suit = led_card.get_round_suit(trump_suit)
+                    if led_suit not in self.led_suits:
+                        self.led_suits.append(led_suit)
                     
                     # Get legal cards
                     cards_of_led_suit = [card for card in hand if card.get_round_suit(trump_suit) == led_suit]
                     if cards_of_led_suit:
                         legal_cards = cards_of_led_suit
+
                 for card in legal_cards:
-                    action = PlayCardAction(card=card)
-                    legal_actions.append(action)
+                    if card.rank == "RJ":
+                        if leading and len(hand) != 1:
+                            for suit in [suit for suit in FiveHundredCard.suits if suit not in self.led_suits]:
+                                action = PlayCardAction(card=card, suit=suit)
+                                legal_actions.append(action)
+                        elif leading:
+                            for suit in  FiveHundredCard.suits:
+                                action = PlayCardAction(card=card, suit=suit)
+                                legal_actions.append(action)
+                        else:
+                            action = PlayCardAction(card=card, suit=led_suit)
+                            legal_actions.append(action)
+                    else:
+                        action = PlayCardAction(card=card)
+                        legal_actions.append(action)
+                    
         return legal_actions

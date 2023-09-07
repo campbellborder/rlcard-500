@@ -31,8 +31,8 @@ class ActionEvent(object):  # Interface
     open_misere_bid_action_id = 28
     first_play_card_action_id = 29
     last_play_card_action_id = 70
-    first_play_joker_action_id = 71
-    last_play_joker_action_id = 74
+    first_play_joker_action_id = 71 # spades
+    last_play_joker_action_id = 74 # hearts
 
     def __init__(self, action_id: int):
         self.action_id = action_id
@@ -147,11 +147,15 @@ class BidAction(CallActionEvent):
 
 class PlayCardAction(ActionEvent):
 
-    def __init__(self, card: FiveHundredCard):
-        play_card_action_id = ActionEvent.first_play_card_action_id + card.card_id
+    def __init__(self, card: FiveHundredCard, suit: str or None = None):
+        if suit and card.rank == "RJ": 
+            card = FiveHundredCard(suit, "RJ")
+            play_card_action_id = ActionEvent.first_play_card_action_id + card.card_id + FiveHundredCard.suits.index(suit)
+        else:
+            play_card_action_id = ActionEvent.first_play_card_action_id + card.card_id
         super().__init__(action_id=play_card_action_id)
         self.card: FiveHundredCard = card
-
+        
     def __str__(self):
         return f"{self.card}"
 

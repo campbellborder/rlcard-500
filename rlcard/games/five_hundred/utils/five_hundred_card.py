@@ -8,7 +8,7 @@ from rlcard.games.base import Card
 
 class FiveHundredCard(Card):
 
-    suits = ['S', 'C', 'D', 'H', 'RJ']
+    suits = ['S', 'C', 'D', 'H']
     ranks = ['4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
 
     black_suits = ['S', 'C']
@@ -23,10 +23,12 @@ class FiveHundredCard(Card):
 
     @staticmethod
     def get_deck() -> [Card]:
+        _deck[42].suit = ""
         return _deck.copy()
 
     def __init__(self, suit: str, rank: str):
         super().__init__(suit=suit, rank=rank)
+        
         if self.rank == "RJ":
             self.card_id = 42
         else:
@@ -38,7 +40,7 @@ class FiveHundredCard(Card):
                 self.card_id = 10 * suit_index + rank_index + suit_index % 2
 
     def get_round_suit(self, trump_suit: str or None):
-        if self.rank == "RJ":
+        if self.rank == "RJ" and self.suit == "":
             return trump_suit
         elif trump_suit and self.is_left_bower(trump_suit):
             return trump_suit
@@ -46,7 +48,7 @@ class FiveHundredCard(Card):
 
     def get_round_rank(self, trump_suit):
 
-        if self.suit == "RJ":
+        if self.rank == "RJ":
             return 100
         elif trump_suit and self.is_right_bower(trump_suit):
             return 99

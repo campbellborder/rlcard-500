@@ -140,7 +140,8 @@ class FiveHundredRound:
         '''
         trump_suit = None
         if self.is_bidding_over() and self.contract_bid_move:
-            trump_suit = self.contract_bid_move.action.bid_suit
+            bid_suit = self.contract_bid_move.action.bid_suit
+            trump_suit = bid_suit if bid_suit != "NT" else None
         return trump_suit
     
     def distribute_kitty(self):

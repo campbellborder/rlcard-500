@@ -11,7 +11,7 @@ from rlcard.utils import *
 from rlcard.games.five_hundred.game import FiveHundredGame as Game
 from rlcard.games.five_hundred.dealer import FiveHundredDealer
 from rlcard.games.five_hundred.player import FiveHundredPlayer
-from rlcard.games.five_hundred.utils.action_event import PassAction
+from rlcard.games.five_hundred.utils.action_event import PassAction, ActionEvent, BidAction, PlayCardAction
 from rlcard.games.five_hundred.utils.five_hundred_card import FiveHundredCard
 from rlcard.games.five_hundred.utils.move import DealHandMove
 
@@ -111,7 +111,7 @@ class TestFiveHundredGame(unittest.TestCase):
 
     def test_discarding(self):
         game = self.create_game(5)
-        _, first_player_id = game.init_game()
+        _, _ = game.init_game()
         for i in range(4):
             if i == 3:
                 action = self.get_random_action(game)
@@ -125,8 +125,8 @@ class TestFiveHundredGame(unittest.TestCase):
         self.assertEqual(current_player_id, next_player_id)
 
     def test_full_round(self):
-
-        game = self.create_game()
+        seed = 1
+        game = self.create_game(seed)
         game.init_game()
         while True:
             # print(game.round.players[game.get_player_id()].hand)
@@ -140,6 +140,58 @@ class TestFiveHundredGame(unittest.TestCase):
                 print(game.scores)
                 print(game.num_rounds)
                 break
+            
+    def test_joker_leading_first(self):
+        seed = 2 # player 0 has joker
+        game = self.create_game(seed)
+        game.init_game()
+        for i in range(4):
+            if i == 2:
+                action = BidAction(8, "NT")
+            else:
+                action = PassAction()
+            game.step(action)
+
+        for card_id in [4, 31, 37]:
+          action = PlayCardAction(FiveHundredCard.card(card_id))
+          game.step(action)
+        # for player in game.round.players:
+        #     print(player.hand)
+        action = PlayCardAction(FiveHundredCard.card(9)) # Ace of spades
+        game.step(action)
+        for i in range(3):
+            self.take_random_step(game)
+        # print(game.judger.get_legal_actions())
+        # Joker of diamond, hearts, clubs should be in valid actions NOT SPADES!
+    
+    def test_joker_following(self):
+        seed = 2 # player 0 has joker
+        game = self.create_game(seed)
+        game.init_game()
+        for i in range(4):
+            if i == 0:
+                action = BidAction(8, "NT")
+            else:
+                action = PassAction()
+            game.step(action)
+
+        for card_id in [4, 31, 37]: # discard kitty
+          action = PlayCardAction(FiveHundredCard.card(card_id))
+          game.step(action)
+        for player in game.round.players:
+            print([(card, card.card_id) for card in player.hand])
+        for card_id in [30, 28]:
+            action = PlayCardAction(FiveHundredCard.card(card_id))
+            game.step(action)
+        # print(game.judger.get_legal_actions()) # only 4D
+        for card_id in [20, 21]:
+            action = PlayCardAction(FiveHundredCard.card(card_id))
+            game.step(action)
+        for card_id in [23, 41]:
+            action = PlayCardAction(FiveHundredCard.card(card_id))
+            game.step(action)
+        # print(game.judger.get_legal_actions()) # all cards and joker diamond
+
 
     # def test_first_legal_bids(self):
     #     game = Game()
