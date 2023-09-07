@@ -69,7 +69,7 @@ class FiveHundredRound:
         
         self.contract_bid_move: MakeBidMove or None = None
         self.play_card_count: int = 0
-        self.won_trick_counts = [0] * 2 # count of tricks won by each side
+        self.won_trick_counts = [0] * 4 # count of tricks won by each player
         self.move_sheet: List[FiveHundredMove] = []
         self.move_sheet.append(DealHandMove(dealer=self.players[dealer_id], shuffled_deck=self.dealer.shuffled_deck))
         self.current_player_id: int = (dealer_id + 1) % 4
@@ -185,7 +185,7 @@ class FiveHundredRound:
             if len(self.get_trick_moves()) == 4:
                 trick_winner = self.get_trick_winner()
                 self.current_player_id = trick_winner.player_id
-                self.won_trick_counts[trick_winner.player_id % 2] += 1
+                self.won_trick_counts[trick_winner.player_id] += 1
             else:
                 self.next_player()
 
@@ -273,6 +273,7 @@ class FiveHundredRound:
         state['hands'] = [player.hand for player in self.players]
         state['trick_moves'] = ordered_trick_moves
         state['lead'] = lead
+        state['tricks_won'] = self.won_trick_counts
         return state
 
     def print_scene(self):
