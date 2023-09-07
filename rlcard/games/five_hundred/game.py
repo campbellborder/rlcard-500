@@ -34,12 +34,12 @@ class FiveHundredGame:
         '''
         self.board_id = self.np_random.choice([0, 1, 2, 3])
         self.actions: List[ActionEvent] = []
-        self.init_round()
+        self.new_round()
         current_player_id = self.round.current_player_id
         state = self.get_state(player_id=current_player_id)
         return state, current_player_id
 
-    def init_round(self):
+    def new_round(self):
         ''' Initialize a new round
         '''
         self.board_id = (self.board_id + 1) % 4
@@ -47,7 +47,6 @@ class FiveHundredGame:
         self.num_rounds += 1
         self.judger.reset() # Reset led cards
         
-
     def step(self, action: ActionEvent):
         ''' Perform game action and return next player number, and the state for next player
         '''
@@ -67,9 +66,7 @@ class FiveHundredGame:
             ## TODO: Can't reach 500 unless you bid
             if self.is_over():
                 return
-            self.board_id = (self.board_id + 1) % 4
-            self.round = FiveHundredRound(board_id=self.board_id, np_random=self.np_random)
-            self.num_rounds += 1
+            self.new_round()
 
         # Get next player and state
         next_player_id = self.round.current_player_id

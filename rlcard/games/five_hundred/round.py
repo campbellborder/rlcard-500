@@ -228,19 +228,23 @@ class FiveHundredRound:
         points = [0, 0]
         if self.is_over():
             bid_points = self.contract_bid_move.action.bid_points
-            declaring_team = self.get_declarer().player_id % 2
+            declarer_id = self.get_declarer().player_id
             if self.bid_achieved():
-                points[declaring_team] += bid_points
+                points[declarer_id % 2] += bid_points
             else:
-                points[declaring_team] -= bid_points
-            points[1 - declaring_team] += self.won_trick_counts[1 - declaring_team] * 10
+                points[declarer_id % 2] -= bid_points
+            if not self.contract_bid_move.action.misere:
+                opponent_tricks = self.won_trick_counts[(declarer_id + 1) % 4] + self.won_trick_counts[(declarer_id + 3) % 4]
+                points[(declarer_id + 1) % 2] += opponent_tricks * 10
         return points
 
     def bid_achieved(self):
-        declaring_team = self.get_declarer().player_id % 2
+        declarer_id = self.get_declarer().player_id
+        declarer_partner = (declarer_id + 2) % 4
+        tricks_won = self.won_trick_counts[declarer_id] + self.won_trick_counts[declarer_partner]
         if self.contract_bid_move.action.misere:
-            return self.won_trick_counts[declaring_team] == 0
-        return self.won_trick_counts[declaring_team] >= self.contract_bid_move.action.bid_amount
+            return tricks_won == 0
+        return tricks_won >= self.contract_bid_move.action.bid_amount
 
     def get_perfect_information(self):
         
@@ -259,7 +263,10 @@ class FiveHundredRound:
         if self.is_bidding_over() and self.is_discarding_over():
             trick_moves = self.get_trick_moves()
             for trick_move in trick_moves:
-                ordered_trick_moves[trick_move.player.player_id] = trick_move.card
+                if trick_move.card.rank == "RJ":
+                    ordered_trick_moves[trick_move.player.player_id] = FiveHundredCard.card(42)
+                else:
+                  ordered_trick_moves[trick_move.player.player_id] = trick_move.card
             if len(trick_moves):  
                 lead = trick_moves[0].player.player_id
             else:

@@ -178,8 +178,8 @@ class TestFiveHundredGame(unittest.TestCase):
         for card_id in [4, 31, 37]: # discard kitty
           action = PlayCardAction(FiveHundredCard.card(card_id))
           game.step(action)
-        for player in game.round.players:
-            print([(card, card.card_id) for card in player.hand])
+        # for player in game.round.players:
+        #     print([(card, card.card_id) for card in player.hand])
         for card_id in [30, 28]:
             action = PlayCardAction(FiveHundredCard.card(card_id))
             game.step(action)
@@ -190,6 +190,12 @@ class TestFiveHundredGame(unittest.TestCase):
         for card_id in [23, 41]:
             action = PlayCardAction(FiveHundredCard.card(card_id))
             game.step(action)
+        action = game.judger.get_legal_actions()[6]
+        game.step(action)
+        self.take_random_step(game)
+        for player in game.round.players:
+            print([(card, card.card_id) for card in player.hand])
+        print(game.round.won_trick_counts)
         # print(game.judger.get_legal_actions()) # all cards and joker diamond
 
 
