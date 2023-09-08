@@ -27,7 +27,12 @@ class FiveHundredPlayer:
         if card.rank == "RJ":
             self.hand.remove(FiveHundredCard.card(42))
         else:
-            self.hand.remove(card)
+            try:
+              self.hand.remove(card)
+            except Exception as e:
+                print(card)
+                print(self.hand)
+                raise e
 
     def __str__(self):
         return ['N', 'E', 'S', 'W'][self.player_id]

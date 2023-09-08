@@ -80,19 +80,22 @@ class FiveHundredJudger:
 
                 for card in legal_cards:
                     if card.rank == "RJ":
-                        if leading and len(hand) != 1:
+                        trump_suit = self.game.round.get_trump_suit()
+                        if trump_suit:
+                            action = PlayCardAction(card=card, suit=trump_suit)
+                        elif leading and len(hand) != 1:
                             for suit in [suit for suit in FiveHundredCard.suits if suit not in self.led_suits]:
                                 action = PlayCardAction(card=card, suit=suit)
                                 legal_actions.append(action)
+                            continue
                         elif leading:
                             for suit in  FiveHundredCard.suits:
                                 action = PlayCardAction(card=card, suit=suit)
-                                legal_actions.append(action)
                         else:
                             action = PlayCardAction(card=card, suit=led_suit)
-                            legal_actions.append(action)
                     else:
                         action = PlayCardAction(card=card)
-                        legal_actions.append(action)
-                    
+                    legal_actions.append(action)
+        
+        print(legal_actions)
         return legal_actions
