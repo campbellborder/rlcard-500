@@ -63,7 +63,7 @@ class FiveHundredJudger:
                 trick_moves = self.game.round.get_trick_moves()
                 hand = self.game.round.players[current_player.player_id].hand
                 legal_cards = hand
-                leading = not (trick_moves and len(trick_moves) < 4)
+                leading = not (trick_moves and len(trick_moves) < self.game.round.get_full_trick_count())
                 if not leading:
 
                     # Get led suit

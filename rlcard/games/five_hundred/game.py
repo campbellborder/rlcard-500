@@ -64,8 +64,6 @@ class FiveHundredGame:
             round_points = self.round.get_points()
             self.scores = tuple(sum(x) for x in zip(self.scores, round_points))
             ## TODO: Can't reach 500 unless you bid
-            if self.is_over():
-                return
             self.new_round()
 
         # Get next player and state

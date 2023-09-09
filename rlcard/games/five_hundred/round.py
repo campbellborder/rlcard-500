@@ -103,15 +103,7 @@ class FiveHundredRound:
     def is_over(self) -> bool:
         ''' Return whether the current game is over
         '''
-        is_over = True
-        if not self.is_bidding_over():
-            is_over = False
-        elif self.contract_bid_move:
-            for player in self.players:
-                if player.hand:
-                    is_over = False
-                    break
-        return is_over
+        return sum(self.won_trick_counts) == 10
 
     def get_current_player(self) -> FiveHundredPlayer or None:
         ''' Return the current player
@@ -124,16 +116,22 @@ class FiveHundredRound:
         '''
         trick_moves: List[PlayCardMove] = []
         if self.is_bidding_over() and self.is_discarding_over():
+            full_trick_count = self.get_full_trick_count()
             if self.play_card_count > 0:
-                trick_pile_count = self.play_card_count % 4
+                trick_pile_count = self.play_card_count % full_trick_count
                 if trick_pile_count == 0:
-                    trick_pile_count = 4  # wch: note this
+                    trick_pile_count = full_trick_count
                 trick_moves = self.move_sheet[-trick_pile_count:]
 
                 # TODO: do we need this anymore?
                 if len(trick_moves) != trick_pile_count:
                     raise Exception(f'get_trick_moves: count of trick_moves={[str(move.card) for move in trick_moves]} does not equal {trick_pile_count}')
         return trick_moves
+
+    def get_full_trick_count(self):
+
+        if self.is_bidding_over():
+            return 4 if not self.contract_bid_move.action.misere else 3
 
     def get_trump_suit(self) -> str or None:
         ''' Gets the suit of the winning bid
@@ -183,7 +181,7 @@ class FiveHundredRound:
             # Playing a card
             self.play_card_count += 1
             current_player.remove_card_from_hand(action.card)
-            if len(self.get_trick_moves()) == 4:
+            if len(self.get_trick_moves()) == self.get_full_trick_count():
                 trick_winner = self.get_trick_winner()
                 self.current_player_id = trick_winner.player_id
                 self.won_trick_counts[trick_winner.player_id] += 1
@@ -210,8 +208,12 @@ class FiveHundredRound:
             if self.is_bidding_over():
                 if not self.is_discarding_over():
                     self.current_player_id = self.contract_bid_move.player.player_id
-                else: # Next player in rotation
-                    self.current_player_id = (self.current_player_id + 1) % 4
+                else: # Next player in rotation (unless misere)
+                    misere = self.contract_bid_move.action.misere
+                    if misere and self.current_player_id == (self.contract_bid_move.player.player_id + 1) % 4:
+                        self.current_player_id = (self.current_player_id + 2) % 4
+                    else:
+                        self.current_player_id = (self.current_player_id + 1) % 4
             else:
                 # Next non-passed player
                 while True:
