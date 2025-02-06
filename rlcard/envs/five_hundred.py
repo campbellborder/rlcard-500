@@ -16,30 +16,6 @@ from rlcard.games.five_hundred.utils.action_event import ActionEvent
 from rlcard.games.five_hundred.utils.five_hundred_card import FiveHundredCard
 from rlcard.games.five_hundred.utils.move import CallMove, PlayCardMove
 
-#   [] Why no_bid_action_id in bidding_rep ?
-#       It allows the bidding always to start with North.
-#       If North is not the dealer, then he must call 'no_bid'.
-#       Until the dealer is reached, 'no_bid' must be the call.
-#       I think this might help because it keeps a player's bid in a fixed 'column'.
-#       Note: the 'no_bid' is only inserted in the bidding_rep, not in the actual game.
-#
-#   [] Why current_player_rep ?
-#       Explanation here.
-#
-#   [] Note: hands_rep maintain the hands by N, E, S, W.
-#
-#   [] Note: trick_rep maintains the trick cards by N, E, S, W.
-#      The trick leader can be deduced since play is in clockwise direction.
-#
-#   [] Note: is_bidding_rep can be deduced from bidding_rep.
-#      I think I added is_bidding_rep before bidding_rep and thus it helped in early testing.
-#      My early testing had just the player's hand: I think the model conflated the bidding phase with the playing phase in this situation.
-#      Although is_bidding_rep is not needed, keeping it may improve learning.
-#
-#   [] Note: bidding_rep uses the action_id instead of one hot encoding.
-#      I think one hot encoding would make the input dimension significantly larger.
-#
-
 class FiveHundredEnv(Env):
     ''' 500 Environment
     '''
@@ -69,7 +45,7 @@ class FiveHundredEnv(Env):
         '''
         return self.game.round.get_perfect_information()
 
-    def _extract_state(self, state):  # wch: don't use state 211126
+    def _extract_state(self, state):
         ''' Extract useful information from state for RL.
 
         Args:
@@ -91,14 +67,14 @@ class FiveHundredEnv(Env):
         '''
         return ActionEvent.from_action_id(action_id=action_id)
 
-    # TODO: why?
     def _get_legal_actions(self):
         ''' Get all legal actions for current state.
 
         Returns:
             (list): A list of legal actions' id.
         '''
-        raise NotImplementedError
+
+        return self.game.judger.get_legal_actions()
 
 
 class FiveHundredPayoffDelegate(object):
@@ -173,25 +149,24 @@ class FiveHundredStateExtractor(object):  # interface
 
 class DefaultFiveHundredStateExtractor(FiveHundredStateExtractor):
 
+    # Score:            2 [our_score, their_score]
+    # Game phase:       3 [bidding, discarding, playing]
+    # Hand:             43 [4S, 4C, 5S, ..., AD, AH, JK] (one hot)
+    # Bid(s):           27 [6S, 6C, ..., 8S, M, 8C, ... 10H, 10NT, OM] (one hot)
+    # Player position:  4 [0, 1, 2, 3] (one hot)
+    # Passed players:   4 [0, 1, 2, 3] (one hot)
+    # Tricks:           10 [1, 2, ..., 10] (one hot)
+    # Trick cards:      43 [4S, 4C, 5S, ..., AD, AH, JK] (1, 2, 3 in order)
+    # Opponent's hand   43              '                (if open misere)
+    # TOTAL:            136
+
     def __init__(self):
         super().__init__()
-        self.max_bidding_rep_index = 40  # Note: max of 40 calls
-        self.last_bid_rep_size = 1 + 35 + 3  # no_bid, bid, pass, dbl, rdbl
+
+        self.phase_indices = {"bid": 2, "discard": 3, "play": 4}
 
     def get_state_shape_size(self) -> int:
-        state_shape_size = 0
-        state_shape_size += 4 * 52  # hands_rep_size
-        state_shape_size += 4 * 52  # trick_rep_size
-        state_shape_size += 52  # hidden_cards_rep_size
-        state_shape_size += 4  # vul_rep_size
-        state_shape_size += 4  # dealer_rep_size
-        state_shape_size += 4  # current_player_rep_size
-        state_shape_size += 1  # is_bidding_rep_size
-        state_shape_size += self.max_bidding_rep_index  # bidding_rep_size
-        state_shape_size += self.last_bid_rep_size  # last_bid_rep_size
-        state_shape_size += 8  # bid_amount_rep_size
-        state_shape_size += 5  # trump_suit_rep_size
-        return state_shape_size
+        return 179
 
     def extract_state(self, game: FiveHundredGame):
         ''' Extract useful information from state for RL.
@@ -202,109 +177,66 @@ class DefaultFiveHundredStateExtractor(FiveHundredStateExtractor):
         Returns:
             (numpy.array): The extracted state
         '''
-        extracted_state = {}
-        # legal_actions: OrderedDict = self.get_legal_actions(game=game)
-        # raw_legal_actions = list(legal_actions.keys())
-        # current_player = game.round.get_current_player()
-        # current_player_id = current_player.player_id
+        state = np.zeros(self.get_state_shape_size())
+        info = game.get_perfect_information()
+        current_player_id = info['current_player_id']
 
-        # # construct hands_rep of hands of players
-        # hands_rep = [np.zeros(52, dtype=int) for _ in range(4)]
-        # if not game.is_over():
-        #     for card in game.round.players[current_player_id].hand:
-        #         hands_rep[current_player_id][card.card_id] = 1
-        #     if game.round.is_bidding_over():
-        #         dummy = game.round.get_dummy()
-        #         other_known_player = dummy if dummy.player_id != current_player_id else game.round.get_declarer()
-        #         for card in other_known_player.hand:
-        #             hands_rep[other_known_player.player_id][card.card_id] = 1
+        # Our score, their score (0 - 1)
+        scores = info['scores']
+        state[0] = scores[current_player_id % 2]
+        state[1] = scores[1 - (current_player_id % 2)]
 
-        # # construct trick_pile_rep
-        # trick_pile_rep = [np.zeros(52, dtype=int) for _ in range(4)]
-        # if game.round.is_bidding_over() and not game.is_over():
-        #     trick_moves = game.round.get_trick_moves()
-        #     for move in trick_moves:
-        #         player = move.player
-        #         card = move.card
-        #         trick_pile_rep[player.player_id][card.card_id] = 1
+        # Game phase (2 - 4)
+        phase = info['round_phase']
+        state[self.phase_indices[phase]] = 1
 
-        # # construct hidden_card_rep (during trick taking phase)
-        # hidden_cards_rep = np.zeros(52, dtype=int)
-        # if not game.is_over():
-        #     if game.round.is_bidding_over():
-        #         declarer = game.round.get_declarer()
-        #         if current_player_id % 2 == declarer.player_id % 2:
-        #             hidden_player_ids = [(current_player_id + 1) % 4, (current_player_id + 3) % 4]
-        #         else:
-        #             hidden_player_ids = [declarer.player_id, (current_player_id + 2) % 4]
-        #         for hidden_player_id in hidden_player_ids:
-        #             for card in game.round.players[hidden_player_id].hand:
-        #                 hidden_cards_rep[card.card_id] = 1
-        #     else:
-        #         for player in game.round.players:
-        #             if player.player_id != current_player_id:
-        #                 for card in player.hand:
-        #                     hidden_cards_rep[card.card_id] = 1
+        # Hand (5 - 47)
+        hand = info['hands'][current_player_id]
+        for card in hand:
+            state[card.card_id + 5] = 1
+        
+        # Bid(s) (48 - 74)
+        bids = info['bids']
+        all_bids = [bid for player_bids in bids for bid in player_bids]
+        all_bids.sort(key=lambda x: x.action.action_id)
+        if phase == "bid":
+            for bid in all_bids:
+                if bid.action.action_id > 1: # ignore no bid and pass
+                    state[bid.action.action_id + 46] = 1 # action_id 2 corresponds to 48
+        else: 
+            for bid in all_bids[::-1]:
+                if bid.action.action_id > 1: # ignore no bid and pass
+                    state[bid.action.action_id + 46] = 1
+                    break # only the winning bid
 
-        # # construct vul_rep
-        # vul_rep = np.array(game.round.tray.vul, dtype=int)
+        # Player position (75 - 78)
+        lead = info['lead']
+        state[75 + ((current_player_id - lead) % 4)] = 1
 
-        # # construct dealer_rep
-        # dealer_rep = np.zeros(4, dtype=int)
-        # dealer_rep[game.round.tray.dealer_id] = 1
+        # Passed players (79 - 82)
+        if info['round_phase'] == 'bid':
+            passed = info['players_passed']
+            state[79:83] =  passed[lead:] + passed[:lead]
 
-        # # construct current_player_rep
-        # current_player_rep = np.zeros(4, dtype=int)
-        # current_player_rep[current_player_id] = 1
+        # Tricks (83 - 92)
+        tricks_won = info["tricks_won"]
+        for i in range(10):
+            if tricks_won[i] == current_player_id % 2:
+                state[83 + i] = 1
 
-        # # construct is_bidding_rep
-        # is_bidding_rep = np.array([1] if game.round.is_bidding_over() else [0])
+        # Trick cards (93 - 135)
+        trick_cards = info['trick_cards']
+        for i, card in enumerate(trick_cards):
+            if card:
+                print(current_player_id)
+                print(lead)
+                state[93 + card.card_id] = ((i - lead) % 4) + 1
 
-        # # construct bidding_rep
-        # bidding_rep = np.zeros(self.max_bidding_rep_index, dtype=int)
-        # bidding_rep_index = game.round.dealer_id  # no_bid_action_ids allocated at start so that north always 'starts' the bidding
-        # for move in game.round.move_sheet:
-        #     if bidding_rep_index >= self.max_bidding_rep_index:
-        #         break
-        #     elif isinstance(move, PlayCardMove):
-        #         break
-        #     elif isinstance(move, CallMove):
-        #         bidding_rep[bidding_rep_index] = move.action.action_id
-        #         bidding_rep_index += 1
+        # Opponent's hand (136 - 178)
+        open_misere_lead = info['open_misere_lead']
+        if open_misere_lead != -1:
+            hand = info['hands'][open_misere_lead]
+            for card in hand:
+                state[card.card_id + 5] = 1
 
-        # # last_bid_rep
-        # last_bid_rep = np.zeros(self.last_bid_rep_size, dtype=int)
-        # last_move = game.round.move_sheet[-1]
-        # if isinstance(last_move, CallMove):
-        #     last_bid_rep[last_move.action.action_id - ActionEvent.no_bid_action_id] = 1
-
-        # # bid_amount_rep and trump_suit_rep
-        # bid_amount_rep = np.zeros(8, dtype=int)
-        # trump_suit_rep = np.zeros(5, dtype=int)
-        # if game.round.is_bidding_over() and not game.is_over() and game.round.play_card_count == 0:
-        #     contract_bid_move = game.round.contract_bid_move
-        #     if contract_bid_move:
-        #         bid_amount_rep[contract_bid_move.action.bid_amount] = 1
-        #         bid_suit = contract_bid_move.action.bid_suit
-        #         bid_suit_index = 4 if not bid_suit else FiveHundredCard.suits.index(bid_suit)
-        #         trump_suit_rep[bid_suit_index] = 1
-
-        # rep = []
-        # rep += hands_rep
-        # rep += trick_pile_rep
-        # rep.append(hidden_cards_rep)
-        # rep.append(vul_rep)
-        # rep.append(dealer_rep)
-        # rep.append(current_player_rep)
-        # rep.append(is_bidding_rep)
-        # rep.append(bidding_rep)
-        # rep.append(last_bid_rep)
-        # rep.append(bid_amount_rep)
-        # rep.append(trump_suit_rep)
-
-        # obs = np.concatenate(rep)
-        # extracted_state['obs'] = obs
-        # extracted_state['legal_actions'] = legal_actions
-        # extracted_state['raw_legal_actions'] = raw_legal_actions
-        # extracted_state['raw_obs'] = obs
-        return extracted_state
+        return state

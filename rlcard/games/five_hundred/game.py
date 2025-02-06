@@ -26,7 +26,7 @@ class FiveHundredGame:
         self.actions: [ActionEvent] = []  # must reset in init_game
         self.round: FiveHundredRound or None = None  # must reset in init_game
         self.num_players: int = 4
-        self.scores: (int, int) = (0, 0) # (N-S, E-W)
+        self.scores: (int, int) = (0, 0) # (N-S (0-2), E-W (1-3))
         self.num_rounds = 0
 
     def init_game(self):

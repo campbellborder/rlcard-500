@@ -44,6 +44,9 @@ class DealHandMove(FiveHundredMove):
         shuffled_deck_text = " ".join([str(card) for card in self.shuffled_deck])
         return f'{self.dealer} deal shuffled_deck=[{shuffled_deck_text}]'
 
+    def __repr__(self):
+        return "DEAL"
+
 
 class MakePassMove(CallMove):
 

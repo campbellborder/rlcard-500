@@ -6,8 +6,6 @@
 
 from .five_hundred_card import FiveHundredCard
 
-## NOTE: might need to put misere inbetween 8S and 8C
-
 # ====================================
 # Action_ids:
 #       0 -> no_bid_action_id
@@ -99,7 +97,6 @@ class PassAction(CallActionEvent):
 
 class BidAction(CallActionEvent):
 
-    ## TODO: Calculate this
     bid_points = {"N": 0, "P": 0,
                 "6S": 40,            "6C": 60, "6D": 80, "6H": 100, "6NT": 120,
                 "7S": 140,           "7C": 160, "7D": 180, "7H": 200, "7NT": 220,

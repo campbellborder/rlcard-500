@@ -97,5 +97,4 @@ class FiveHundredJudger:
                         action = PlayCardAction(card=card)
                     legal_actions.append(action)
         
-        print(legal_actions)
         return legal_actions
